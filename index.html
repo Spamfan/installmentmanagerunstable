@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>installment manager (v7 github)</title>
+    <title>installment manager (v8 github)</title>
     
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -63,13 +63,18 @@
         }
         .hidden { display: none !important; }
 
-        /* --- LOGOUT BUTTON --- */
-        #btn-logout {
-            position: absolute; top: 15px; right: 15px;
+        /* --- HEADER BUTTONS --- */
+        .top-actions {
+            position: absolute; top: 15px; right: 15px; display: flex; gap: 10px;
+        }
+        .btn-header {
             background: none; border: 1px solid #ccc; padding: 5px 10px;
             font-size: 11px; cursor: pointer; border-radius: 4px; color: #666;
         }
-        #btn-logout:hover { background: #f0f2f5; color: #d93025; border-color: #d93025; }
+        .btn-header:hover { background: #f0f2f5; color: #000; }
+        #btn-logout:hover { border-color: #d93025; color: #d93025; }
+        #btn-reset-data { border-color: #f0ad4e; color: #f0ad4e; }
+        #btn-reset-data:hover { background: #fff3cd; color: #856404; }
 
         /* --- FILTERS BAR --- */
         #filter-bar {
@@ -249,11 +254,14 @@
         </div>
     </div>
 
-    <h1>installment manager (v7 github)</h1>
+    <h1>installment manager (v8 github)</h1>
     <div class="header-meta" id="repo-status">Not Connected</div>
 
     <div id="container">
-        <button id="btn-logout">Logout</button>
+        <div class="top-actions">
+            <button id="btn-reset-data" class="btn-header">⚠ Force Reset Data</button>
+            <button id="btn-logout" class="btn-header">Logout</button>
+        </div>
         
         <!-- Filter Bar -->
         <div id="filter-bar">
@@ -356,7 +364,7 @@
 
         // --- 3. STATE ---
         let devicesData = {};
-        let currentSha = null; // Important for GitHub Writes
+        let currentSha = null;
         let dirtyRows = new Set();
         let userToken = localStorage.getItem('gh_token');
 
@@ -365,24 +373,18 @@
         const loginInput = document.getElementById('login-input');
         const btnLogin = document.getElementById('btn-login');
         const btnLogout = document.getElementById('btn-logout');
+        const btnReset = document.getElementById('btn-reset-data');
         const loadingMsg = document.getElementById('loading-msg');
         const repoStatus = document.getElementById('repo-status');
 
-        // Initial Check
         if (userToken) {
             loginModal.classList.add('hidden');
             loadFromGitHub();
-        } else {
-            // Show login
         }
 
-        // Auth Logic
         btnLogin.addEventListener('click', () => {
             const token = loginInput.value.trim();
-            if (!token.startsWith('ghp_')) {
-                alert('Invalid Token format (should start with ghp_)');
-                return;
-            }
+            if (!token.startsWith('ghp_')) return alert('Invalid Token format');
             userToken = token;
             localStorage.setItem('gh_token', userToken);
             loginModal.classList.add('hidden');
@@ -394,9 +396,13 @@
             location.reload();
         });
 
-        // --- 5. GITHUB API LOGIC ---
+        btnReset.addEventListener('click', () => {
+            if (confirm("⚠️ WARNING: This will DELETE all current data on GitHub and replace it with the October Legacy snapshot.\n\nAre you sure?")) {
+                seedLegacyData();
+            }
+        });
 
-        // UTF-8 Safe Base64 Encoder/Decoder
+        // --- 5. GITHUB API LOGIC ---
         const toBase64 = str => window.btoa(unescape(encodeURIComponent(str)));
         const fromBase64 = str => decodeURIComponent(escape(window.atob(str)));
 
@@ -407,10 +413,7 @@
 
             try {
                 const response = await fetch(API_URL, {
-                    headers: {
-                        'Authorization': `token ${userToken}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
+                    headers: { 'Authorization': `token ${userToken}`, 'Accept': 'application/vnd.github.v3+json' }
                 });
 
                 if (response.status === 404) {
@@ -422,7 +425,7 @@
                 if (!response.ok) throw new Error(`GitHub Error: ${response.status}`);
 
                 const data = await response.json();
-                currentSha = data.sha; // Save SHA for next write
+                currentSha = data.sha;
                 const content = fromBase64(data.content);
                 devicesData = JSON.parse(content);
                 
@@ -433,14 +436,14 @@
 
             } catch (err) {
                 loadingMsg.textContent = "Error: " + err.message;
-                if (err.message.includes('401')) {
-                    alert("Invalid Token. Please Logout and try again.");
+                if (err.message.includes('401') || err.message.includes('403')) {
+                    alert("Auth Error. Check Token.");
                 }
             }
         }
 
         async function seedLegacyData() {
-            // Convert Legacy to Device-First
+            loadingMsg.textContent = "Overwriting Cloud Data...";
             const updates = {};
             const cleanKey = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
             const merge = (carrier, src) => {
@@ -449,7 +452,6 @@
                     if (!updates[k]) updates[k] = { name: name, last_updated: Date.now() };
                     updates[k][carrier] = info;
                     updates[k][carrier].last_updated = Date.now();
-                    // Fix missing fields
                     if(carrier!=='tmo' && info.total && !info.monthly) updates[k][carrier].monthly = calc36_Mo(info.total);
                 }
             };
@@ -458,36 +460,28 @@
             merge('tmo', LEGACY_EDLP_DATA.tmo);
 
             devicesData = updates;
-            await saveToGitHub(devicesData, "Initial Seed of Legacy Data");
+            await saveToGitHub(devicesData, "Force Reset to Legacy Data");
             renderTable();
         }
 
         async function saveToGitHub(newData, msg = "Update EDLP Data") {
             const content = toBase64(JSON.stringify(newData, null, 2));
-            
-            const body = {
-                message: msg,
-                content: content,
-                sha: currentSha // Required to update existing file
-            };
+            const body = { message: msg, content: content, sha: currentSha };
 
             const response = await fetch(API_URL, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `token ${userToken}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Authorization': `token ${userToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
 
             if (!response.ok) throw new Error("Save Failed: " + response.statusText);
 
             const result = await response.json();
-            currentSha = result.content.sha; // Update SHA for next write
+            currentSha = result.content.sha;
             console.log("Save Successful. New SHA:", currentSha);
         }
 
-        // --- 6. MATH & HELPERS (Same as v6) ---
+        // --- 6. MATH & HELPERS ---
         const roundMo = (n) => Math.round((parseFloat(n)||0)*100)/100;
         const roundTot = (n) => Math.round(parseFloat(n)||0);
         const calc36_Tot = (m) => roundTot(m*36);
@@ -511,7 +505,7 @@
             return str;
         }
 
-        // --- 7. UI LOGIC (Same as v6) ---
+        // --- 7. UI LOGIC ---
         const deviceListEl = document.getElementById('device-list');
         const searchBar = document.getElementById('search-bar');
         const btnSaveTop = document.getElementById('btn-save-top');
@@ -532,9 +526,7 @@
                 });
             });
         });
-        Object.keys(colMap).forEach(id => {
-            document.getElementById(id).addEventListener('change', (e) => toggleCol(colMap[id], e.target.checked));
-        });
+        Object.keys(colMap).forEach(id => document.getElementById(id).addEventListener('change', (e) => toggleCol(colMap[id], e.target.checked)));
         function toggleCol(cls, show) {
             document.querySelectorAll('.'+cls).forEach(c => c.classList.toggle('hide-col', !show));
         }
@@ -688,7 +680,6 @@
             dirtyRows.forEach(key => {
                 const row = document.querySelector(`tr[data-key="${key}"]`);
                 if (row) {
-                    // Logic duplication from saveRow but optimized for bulk
                     const orig = JSON.parse(row.dataset.original);
                     const getVal = (sel) => parseFloat(row.querySelector(sel).value) || 0;
                     const curr = {
@@ -711,9 +702,10 @@
         btnSaveTop.addEventListener('click', handleBulkSave);
         btnSaveBottom.addEventListener('click', handleBulkSave);
 
-        // Add Row Logic
+        // Add New Logic
         const addRow = document.getElementById('add-row');
         const addInputs = addRow.querySelectorAll('input');
+        
         addRow.addEventListener('input', (e) => {
              const t = e.target;
              if (t.id === 'new-att-total') document.getElementById('new-att-mo').value = calc36_Mo(t.value);
@@ -721,8 +713,13 @@
              if (t.id === 'new-vzw-total') document.getElementById('new-vzw-mo').value = calc36_Mo(t.value);
              if (t.id === 'new-vzw-mo') document.getElementById('new-vzw-total').value = calc36_Tot(t.value);
              const dp = parseFloat(document.getElementById('new-tmo-dp').value)||0;
-             if (t.id === 'new-tmo-total') document.getElementById('new-tmo-mo').value = calcTmo_Mo(t.value, dp);
-             if (t.id === 'new-tmo-mo') document.getElementById('new-tmo-total').value = calcTmo_Tot(t.value, dp);
+             const red = document.getElementById('new-tmo-red');
+             const tot = document.getElementById('new-tmo-total');
+             const mo = document.getElementById('new-tmo-mo');
+
+             if (t === red) { const totalVal = t.value ? calcTmo_TotFromRed(t.value) : ''; tot.value = totalVal; mo.value = totalVal ? calcTmo_Mo(totalVal, dp) : ''; }
+             if (t === tot) { mo.value = t.value ? calcTmo_Mo(t.value, dp) : ''; red.value = t.value ? calcTmo_Red(t.value) : ''; }
+             if (t === mo) { const totalVal = t.value ? calcTmo_Tot(t.value, dp) : ''; tot.value = totalVal; red.value = totalVal ? calcTmo_Red(totalVal) : ''; }
         });
 
         document.getElementById('btn-add-device').addEventListener('click', async () => {
@@ -740,6 +737,7 @@
             devicesData[key] = newDevice;
             await saveToGitHub(devicesData, "Added New Device");
             addInputs.forEach(i => i.value = '');
+            renderTable(); // <--- FIX: Update UI immediately
         });
 
         searchBar.addEventListener('input', renderTable);
