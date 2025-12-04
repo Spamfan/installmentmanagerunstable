@@ -2,308 +2,747 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Framework 6: Audio & UI Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>installment manager (v7 github)</title>
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #333; touch-action: none; font-family: Arial, sans-serif; }
-        canvas { display: block; width: 100%; height: 100%; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #e4e6eb;
+            margin: 0;
+            padding: 20px;
+            color: #050505;
+            font-size: 13px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
         
-        #debug-overlay {
-            position: fixed; top: 10px; left: 10px;
-            color: #00FF00; font-family: monospace; font-size: 16px; font-weight: bold;
-            background: rgba(0,0,0,0.6); padding: 8px; pointer-events: none; border-radius: 4px;
-        }
-        #fw-version {
-            position: fixed; top: 10px; right: 10px;
-            color: white; font-weight: bold; font-size: 18px;
-            text-shadow: 1px 1px 2px black; pointer-events: none;
+        .header-meta {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.8em;
+            color: #666;
         }
 
-        /* SIMULATED UI OVERLAY */
-        #game-ui {
-            position: fixed; top: 50px; right: 10px;
-            display: flex; gap: 15px;
-            background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
-            pointer-events: none;
+        #container {
+            width: fit-content;
+            margin: 0 auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            position: relative;
+            min-width: 800px;
         }
-        .ui-text { color: white; font-weight: bold; font-size: 18px; text-shadow: 1px 1px 2px black; }
-        #money-display { color: #fbbf24; }
-        #health-display { color: #ef4444; }
 
-        #joystick-zone {
-            position: fixed; bottom: 50px; left: 50px;
-            width: 150px; height: 150px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            touch-action: none;
+        /* --- LOGIN MODAL --- */
+        #login-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        #joystick-knob {
-            position: absolute; top: 50%; left: 50%;
-            width: 50px; height: 50px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
+        #login-box {
+            background: white; padding: 30px; border-radius: 8px; width: 300px; text-align: center;
+        }
+        #login-input {
+            width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px;
+        }
+        #btn-login {
+            background: #1877f2; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;
+        }
+        .hidden { display: none !important; }
+
+        /* --- LOGOUT BUTTON --- */
+        #btn-logout {
+            position: absolute; top: 15px; right: 15px;
+            background: none; border: 1px solid #ccc; padding: 5px 10px;
+            font-size: 11px; cursor: pointer; border-radius: 4px; color: #666;
+        }
+        #btn-logout:hover { background: #f0f2f5; color: #d93025; border-color: #d93025; }
+
+        /* --- FILTERS BAR --- */
+        #filter-bar {
+            display: flex;
+            gap: 20px;
+            padding: 10px;
+            background: #f0f2f5;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            border-right: 1px solid #ccc;
+            padding-right: 15px;
+        }
+        .filter-section:last-child { border-right: none; }
+
+        .filter-master { font-weight: 800; font-size: 0.9em; margin-bottom: 3px; cursor: pointer; }
+        .filter-subs { display: flex; gap: 10px; }
+        .filter-label { font-size: 0.8em; color: #444; display: flex; align-items: center; cursor: pointer; }
+        .filter-label input { margin-right: 4px; }
+
+        /* Search & Actions */
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+
+        #search-bar {
+            flex-grow: 1;
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #000;
+            border-radius: 4px;
+        }
+
+        .btn-save-all {
+            background-color: #1877f2;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+            white-space: nowrap;
+        }
+        .btn-save-all.visible { display: block; }
+
+        /* Table Styles */
+        table {
+            border-collapse: collapse;
+            width: auto;
+        }
+
+        th {
+            background-color: #f0f2f5;
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            color: #444;
+            border-bottom: 2px solid #000;
+            white-space: nowrap;
+        }
+        
+        td {
+            padding: 2px 4px;
+            border-bottom: 1px solid #ccc;
+            vertical-align: top;
+        }
+
+        /* Hiding Logic */
+        .hide-col { display: none !important; }
+
+        /* Input Fields */
+        input[type="text"], input[type="number"] {
+            width: 50px;
+            padding: 4px 2px;
+            border: 1px solid #000;
+            border-radius: 0;
+            font-size: 13px;
+            font-weight: 600;
+            color: #000;
+            background-color: #fff;
+            text-align: center;
+        }
+        input.input-name { width: 140px; text-align: left; font-weight: normal; }
+        
+        input:focus {
+            background-color: #fff;
+            border: 2px solid #1877f2;
+            outline: none;
+        }
+
+        /* --- ACCORDION ROW BEHAVIOR --- */
+        tr.data-row {
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        tr.data-row:hover { background-color: #f7f8fa; }
+        tr.data-row.active { 
+            background-color: #eef3fc; 
+            border-left: 3px solid #1877f2;
+        }
+
+        /* Hidden Elements */
+        .row-meta, .row-actions, .name-lock-wrapper { display: none !important; }
+        
+        tr.active .row-meta { display: block !important; margin-top: 4px; }
+        tr.active .row-actions { display: flex !important; gap: 5px; justify-content: center; margin-top: 5px; }
+        tr.active .name-lock-wrapper { display: flex !important; align-items: center; font-size: 0.75em; color: #1877f2; margin-top: 2px; cursor: pointer; }
+
+        /* Timestamp Styling */
+        .ts-label {
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+        }
+        .ts-recent { color: #008000; font-weight: bold; }
+
+        /* Name Field Logic */
+        .name-display { font-weight: bold; padding: 5px 2px; }
+        .name-input-wrapper { display: none; }
+        .name-unlocked .name-display { display: none; }
+        .name-unlocked .name-input-wrapper { display: block; }
+
+        /* Group Headers */
+        .group-att { background-color: #e3f2fd; color: #000; border: 1px solid #999; }
+        .group-vzw { background-color: #ffebee; color: #000; border: 1px solid #999; }
+        .group-tmo { background-color: #fce4ec; color: #000; border: 1px solid #999; }
+
+        /* Danger Zone (TMO Red Column) */
+        .danger-header { background-color: #ffebee !important; color: #d93025 !important; font-weight: 900 !important; border-bottom: 2px solid #d93025; }
+        input.input-danger { border: 1px solid #d93025; background-color: #fff5f5; color: #d93025; }
+        input.input-danger:focus { border: 2px solid #d93025; }
+
+        /* Icon Buttons */
+        .btn-icon {
+            background: none; border: none; cursor: pointer; font-size: 14px; padding: 5px;
+        }
+        .btn-save-row { color: #1877f2; }
+        .btn-verify-row { color: #42b72a; }
+        .btn-del-row { color: #d93025; }
+
+        /* Add Row Styling */
+        #add-row { background-color: #fff; border-bottom: 2px solid #000; }
+        #add-row input { border: 1px dashed #666; }
+        
+        .sticky-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
         }
     </style>
 </head>
 <body>
 
-    <div id="fw-version">Framework 6</div>
-    <div id="debug-overlay">
-        FPS: <span id="fps-cur">0</span><br>
-        Min: <span id="fps-min" style="color: #ff4444;">0</span><br>
-        Max: <span id="fps-max" style="color: #44ff44;">0</span><br>
-        Test: Audio + UI Updates
+    <!-- Login Modal -->
+    <div id="login-modal">
+        <div id="login-box">
+            <h2>Admin Access</h2>
+            <p style="font-size:0.9em; color:#666;">Enter GitHub Bot Token</p>
+            <input type="password" id="login-input" placeholder="ghp_...">
+            <button id="btn-login">Connect</button>
+        </div>
     </div>
 
-    <div id="game-ui">
-        <div id="money-display" class="ui-text">$0</div>
-        <div id="health-display" class="ui-text">5/5 HP</div>
+    <h1>installment manager (v7 github)</h1>
+    <div class="header-meta" id="repo-status">Not Connected</div>
+
+    <div id="container">
+        <button id="btn-logout">Logout</button>
+        
+        <!-- Filter Bar -->
+        <div id="filter-bar">
+            <!-- HKST Toggle -->
+            <div class="filter-section" style="border-right: 2px solid #000;">
+                <label class="filter-label" style="font-weight:bold; color:#000;">
+                    <input type="checkbox" id="cb-hkst"> Show only recent HKST inventory
+                </label>
+            </div>
+
+            <!-- ATT Group -->
+            <div class="filter-section">
+                <label class="filter-master"><input type="checkbox" id="m-att" checked> AT&T</label>
+                <div class="filter-subs">
+                    <label class="filter-label"><input type="checkbox" id="cb-att-mo" data-group="att" checked> Mo</label>
+                    <label class="filter-label"><input type="checkbox" id="cb-att-tot" data-group="att" checked> Total</label>
+                </div>
+            </div>
+            <!-- VZW Group -->
+            <div class="filter-section">
+                <label class="filter-master"><input type="checkbox" id="m-vzw" checked> Verizon</label>
+                <div class="filter-subs">
+                    <label class="filter-label"><input type="checkbox" id="cb-vzw-mo" data-group="vzw" checked> Mo</label>
+                    <label class="filter-label"><input type="checkbox" id="cb-vzw-tot" data-group="vzw" checked> Total</label>
+                </div>
+            </div>
+            <!-- TMO Group -->
+            <div class="filter-section">
+                <label class="filter-master"><input type="checkbox" id="m-tmo" checked> T-Mobile</label>
+                <div class="filter-subs">
+                    <label class="filter-label"><input type="checkbox" id="cb-tmo-red" data-group="tmo" checked style="color:#d93025; font-weight:bold;"> NO DP</label>
+                    <label class="filter-label"><input type="checkbox" id="cb-tmo-dp" data-group="tmo" checked> DP</label>
+                    <label class="filter-label"><input type="checkbox" id="cb-tmo-mo" data-group="tmo" checked> Mo</label>
+                    <label class="filter-label"><input type="checkbox" id="cb-tmo-tot" data-group="tmo" checked> Total</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Controls -->
+        <div class="controls-row">
+            <input type="text" id="search-bar" placeholder="Search devices...">
+            <button class="btn-save-all" id="btn-save-top">Save All Changes</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="main-table">
+                <thead>
+                    <tr>
+                        <th class="col-name">Device</th>
+                        <!-- ATT Headers -->
+                        <th class="group-att c-att-mo">$/mo</th><th class="group-att c-att-tot">Total</th>
+                        <!-- VZW Headers -->
+                        <th class="group-vzw c-vzw-mo">$/mo</th><th class="group-vzw c-vzw-tot">Total</th>
+                        <!-- TMO Headers -->
+                        <th class="group-tmo c-tmo-red danger-header">MO IF<br>NO DP</th>
+                        <th class="group-tmo c-tmo-dp">Down</th>
+                        <th class="group-tmo c-tmo-mo">Mo<br><span style="font-size:0.7em; font-weight:normal;">(after dp)</span></th>
+                        <th class="group-tmo c-tmo-tot">Total</th>
+                        <th class="col-actions" style="width: 50px;"></th>
+                    </tr>
+                    
+                    <!-- Add New Row -->
+                    <tr id="add-row">
+                        <td><input type="text" id="new-name" class="input-name" placeholder="New Device Name"></td>
+                        <td class="c-att-mo"><input type="number" id="new-att-mo" step="0.01"></td><td class="c-att-tot"><input type="number" id="new-att-total"></td>
+                        <td class="c-vzw-mo"><input type="number" id="new-vzw-mo" step="0.01"></td><td class="c-vzw-tot"><input type="number" id="new-vzw-total"></td>
+                        <td class="c-tmo-red"><input type="number" id="new-tmo-red" class="input-danger" step="0.01"></td>
+                        <td class="c-tmo-dp"><input type="number" id="new-tmo-dp"></td>
+                        <td class="c-tmo-mo"><input type="number" id="new-tmo-mo" step="0.01"></td>
+                        <td class="c-tmo-tot"><input type="number" id="new-tmo-total"></td>
+                        <td style="text-align:center;"><button id="btn-add-device" class="btn-icon" style="color:green;"><i class="fas fa-plus"></i></button></td>
+                    </tr>
+                </thead>
+                <tbody id="device-list"></tbody>
+            </table>
+            <div id="loading-msg" style="text-align:center; padding:20px; color:#666;">Waiting for connection...</div>
+        </div>
+
+        <div class="sticky-footer">
+            <button class="btn-save-all" id="btn-save-bottom">Save All Changes</button>
+        </div>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
-    <div id="joystick-zone"><div id="joystick-knob"></div></div>
+    <!-- MAIN SCRIPT (GitHub Logic) -->
+    <script>
+        // --- 1. CONFIGURATION ---
+        const GH_OWNER = "Spamfan";
+        const GH_REPO = "optimizerunstable";
+        const GH_FILE = "edlp_data.json";
+        const API_URL = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // State
-    let width, height;
-    const gridSize = 40;
-    const worldSize = 4000;
-    let camera = { x: 0, y: 0 };
-    let player = { x: 2000, y: 2000, width: 35, height: 35, speed: 8, angle: 0, turretAngle: 0 };
-    let joystick = { active: false, dx: 0, dy: 0 };
-    let frameCounter = 0; // For UI updates
+        // --- 2. LEGACY DATA (Auto-Seed) ---
+        const LEGACY_EDLP_DATA = {
+            tmo: { 'Flip 4 5G': { dp: 20, mo: 1, total: 44 }, 'Flip 5G': { dp: 20, mo: 1, total: 44 }, 'Galaxy A13 LTE': { total: 49 }, 'iPhone 15': { dp: 379, mo: 5, total: 499 }, 'iPhone 16': { total: 629 }, 'iPhone 16 Plus': { dp: 549, mo: 7.54, total: 730 }, 'iPhone 16 Pro': { dp: 601 }, 'iPhone 16e': { total: 549 }, 'iPhone 17': { total: 730 }, 'iPhone 17 Pro': { total: 799 }, 'iPhone Air': { total: 899 }, 'Moto G 5G 2025': { dp: 30, mo: 1, total: 54 }, 'Moto G Stylus 2025': { dp: 50, mo: 3.50, total: 134 }, 'REVVL 6': { dp: 30, mo: 0.25, total: 36 } },
+            vzw: { 'Galaxy A03': { total: 36 }, 'Galaxy A16 5G': { total: 120 }, 'Galaxy S24 FE': { total: 650 }, 'Galaxy S25 FE': { total: 651 }, 'Galaxy S25 Plus 5G': { total: 799 }, 'Galaxy Z Flip 4 5G': { total: 650 }, 'iPhone 15': { total: 499 }, 'iPhone 16 Plus': { total: 730 }, 'iPhone 16 Pro': { total: 799 }, 'iPhone 16 Pro Max': { total: 1100 }, 'iPhone 16e': { total: 550 }, 'iPhone 17': { total: 729 }, 'iPhone 17 Pro': { total: 999 }, 'iPhone 17 Pro Max': { total: 1149 }, 'iPhone Air': { total: 899 }, 'Moto G 5G 2024': { total: 72 }, 'Moto G 5G 2025': { total: 72 }, 'Moto G Power 2025': { total: 108 }, 'One Ace 5G': { total: 101 }, 'TCL Flip 3': { total: 36 } },
+            att: { 'Classic': { total: 56 }, 'Galaxy A11': { total: 36 }, 'Galaxy A15 5G': { total: 36 }, 'Galaxy A16 5G': { total: 119 }, 'Galaxy A35 5G': { total: 99 }, 'Galaxy S24 FE': { total: 612 }, 'Galaxy S25 FE': { total: 612 }, 'Galaxy S25 Plus 5G': { total: 799 }, 'Galaxy S25 Ultra 5G': { total: 1149 }, 'iPhone 15': { total: 499 }, 'iPhone 16 Plus': { total: 730 }, 'iPhone 16 Pro': { total: 800 }, 'iPhone 16e': { total: 550 }, 'iPhone 17': { total: 729 }, 'iPhone 17 Pro': { total: 1199 }, 'iPhone Air': { total: 899 }, 'Moto G Stylus 2025': { total: 180 } }
+        };
 
-    // --- AUDIO ENGINE ---
-    let audioCtx;
-    let osc;
-    let gainNode;
-    let isAudioActive = false;
+        const HKST_INVENTORY = [ "Galaxy A03", "Galaxy A16", "Galaxy S24 FE", "Galaxy S25 FE", "Galaxy S25 Plus", "Galaxy Z Flip 4", "iPhone 15", "iPhone 16 Plus", "iPhone 16 Pro Max", "iPhone 16e", "iPhone Air", "Moto G 5G 2024", "Moto G 5G 2025", "Moto G Power 2025", "One Ace 5G", "TCL Flip 3" ];
 
-    function initAudio() {
-        if(audioCtx) return;
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioContext();
-        
-        osc = audioCtx.createOscillator();
-        gainNode = audioCtx.createGain();
-        
-        osc.type = 'sawtooth';
-        osc.frequency.value = 100; // Low rumble
-        gainNode.gain.value = 0.1;
-        
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        osc.start();
-        isAudioActive = true;
-    }
+        // --- 3. STATE ---
+        let devicesData = {};
+        let currentSha = null; // Important for GitHub Writes
+        let dirtyRows = new Set();
+        let userToken = localStorage.getItem('gh_token');
 
-    document.body.addEventListener('touchstart', () => {
-        if(!audioCtx) initAudio();
-        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    }, { once: true });
+        // --- 4. DOM & INIT ---
+        const loginModal = document.getElementById('login-modal');
+        const loginInput = document.getElementById('login-input');
+        const btnLogin = document.getElementById('btn-login');
+        const btnLogout = document.getElementById('btn-logout');
+        const loadingMsg = document.getElementById('loading-msg');
+        const repoStatus = document.getElementById('repo-status');
 
-    // GENERATE 2000 "TANKS"
-    let worldObjects = [];
-    function generateWorld() {
-        for(let i=0; i<2000; i++) {
-            worldObjects.push({
-                x: Math.random() * worldSize,
-                y: Math.random() * worldSize,
-                angle: Math.random() * Math.PI * 2,
-                turretAngle: Math.random() * Math.PI * 2,
-                width: 35,
-                height: 35,
-                color: Math.random() > 0.5 ? '#991b1b' : '#7f1d1d'
-            });
+        // Initial Check
+        if (userToken) {
+            loginModal.classList.add('hidden');
+            loadFromGitHub();
+        } else {
+            // Show login
         }
-    }
-    generateWorld();
 
-    // GENERATE 50 BULLETS
-    let bullets = [];
-    function spawnBullets() {
-        for(let i=0; i<50; i++) {
-            bullets.push({
-                x: Math.random() * worldSize,
-                y: Math.random() * worldSize,
-                dx: (Math.random() - 0.5) * 10,
-                dy: (Math.random() - 0.5) * 10
-            });
-        }
-    }
-    spawnBullets();
+        // Auth Logic
+        btnLogin.addEventListener('click', () => {
+            const token = loginInput.value.trim();
+            if (!token.startsWith('ghp_')) {
+                alert('Invalid Token format (should start with ghp_)');
+                return;
+            }
+            userToken = token;
+            localStorage.setItem('gh_token', userToken);
+            loginModal.classList.add('hidden');
+            loadFromGitHub();
+        });
 
-    function resize() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
-    }
-    window.addEventListener('resize', resize);
-    resize();
+        btnLogout.addEventListener('click', () => {
+            localStorage.removeItem('gh_token');
+            location.reload();
+        });
 
-    // SPATIAL GRID
-    class SpatialGrid {
-        constructor(width, height, cellSize) {
-            this.cellSize = cellSize;
-            this.cells = new Map();
-        }
-        getKey(x, y) { return `${x},${y}`; }
-        add(obj) {
-            const startX = Math.floor(obj.x / this.cellSize);
-            const startY = Math.floor(obj.y / this.cellSize);
-            const key = this.getKey(startX, startY);
-            if (!this.cells.has(key)) this.cells.set(key, []);
-            this.cells.get(key).push(obj);
-        }
-        getNearby(x, y) {
-            const nearby = [];
-            const cx = Math.floor(x / this.cellSize);
-            const cy = Math.floor(y / this.cellSize);
-            for(let i = cx-1; i<=cx+1; i++) {
-                for(let j = cy-1; j<=cy+1; j++) {
-                    const key = this.getKey(i, j);
-                    if(this.cells.has(key)) nearby.push(...this.cells.get(key));
+        // --- 5. GITHUB API LOGIC ---
+
+        // UTF-8 Safe Base64 Encoder/Decoder
+        const toBase64 = str => window.btoa(unescape(encodeURIComponent(str)));
+        const fromBase64 = str => decodeURIComponent(escape(window.atob(str)));
+
+        async function loadFromGitHub() {
+            loadingMsg.style.display = 'block';
+            loadingMsg.textContent = "Fetching data from GitHub...";
+            repoStatus.textContent = `Target: ${GH_OWNER}/${GH_REPO}`;
+
+            try {
+                const response = await fetch(API_URL, {
+                    headers: {
+                        'Authorization': `token ${userToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (response.status === 404) {
+                    console.log("File not found. Seeding...");
+                    await seedLegacyData();
+                    return;
+                }
+
+                if (!response.ok) throw new Error(`GitHub Error: ${response.status}`);
+
+                const data = await response.json();
+                currentSha = data.sha; // Save SHA for next write
+                const content = fromBase64(data.content);
+                devicesData = JSON.parse(content);
+                
+                loadingMsg.style.display = 'none';
+                dirtyRows.clear();
+                updateSaveAllButtons();
+                renderTable();
+
+            } catch (err) {
+                loadingMsg.textContent = "Error: " + err.message;
+                if (err.message.includes('401')) {
+                    alert("Invalid Token. Please Logout and try again.");
                 }
             }
-            return nearby;
-        }
-    }
-
-    // Joystick Logic
-    const joyZone = document.getElementById('joystick-zone');
-    const joyKnob = document.getElementById('joystick-knob');
-    const joyRect = joyZone.getBoundingClientRect();
-    const joyCenter = { x: joyRect.left + joyRect.width/2, y: joyRect.top + joyRect.height/2 };
-
-    joyZone.addEventListener('touchstart', (e) => { e.preventDefault(); joystick.active = true; updateJoystick(e.changedTouches[0]); }, { passive: false });
-    joyZone.addEventListener('touchmove', (e) => { e.preventDefault(); if(joystick.active) updateJoystick(e.changedTouches[0]); }, { passive: false });
-    const endJoystick = (e) => { e.preventDefault(); joystick.active = false; joystick.dx = 0; joystick.dy = 0; joyKnob.style.transform = `translate(-50%, -50%)`; };
-    joyZone.addEventListener('touchend', endJoystick); joyZone.addEventListener('touchcancel', endJoystick);
-
-    function updateJoystick(touch) {
-        const maxDist = 50;
-        let dx = touch.clientX - joyCenter.x;
-        let dy = touch.clientY - joyCenter.y;
-        const dist = Math.hypot(dx, dy);
-        const visualDist = Math.min(dist, maxDist);
-        const angle = Math.atan2(dy, dx);
-        joyKnob.style.transform = `translate(calc(-50% + ${Math.cos(angle)*visualDist}px), calc(-50% + ${Math.sin(angle)*visualDist}px))`;
-        if (dist > 10) { joystick.dx = dx / dist; joystick.dy = dy / dist; } else { joystick.dx = 0; joystick.dy = 0; }
-    }
-
-    function drawTank(t) {
-        ctx.save();
-        ctx.translate(t.x + t.width / 2, t.y + t.height / 2);
-        ctx.save();
-        ctx.rotate(t.angle);
-        ctx.lineWidth = 3; ctx.strokeStyle = 'black'; ctx.fillStyle = "#4A5568";
-        ctx.strokeRect(-t.width / 2, -t.height / 2, t.width, t.height);
-        ctx.fillRect(-t.width / 2, -t.height / 2, t.width, t.height);
-        ctx.fillStyle = t.color || "#3b82f6"; 
-        ctx.strokeRect(-t.width / 2 * 0.8, -t.height / 2 * 0.8, t.width * 0.8, t.height * 0.8);
-        ctx.fillRect(-t.width / 2 * 0.8, -t.height / 2 * 0.8, t.width * 0.8, t.height * 0.8);
-        ctx.restore();
-        ctx.rotate(t.turretAngle);
-        ctx.fillStyle = "#718096";
-        ctx.strokeRect(-t.width/4, -t.height/8, t.width/2, t.height/4);
-        ctx.fillRect(-t.width/4, -t.height/8, t.width/2, t.height/4);
-        ctx.restore();
-    }
-
-    // --- LOOP ---
-    let lastTime = performance.now();
-    let frames = 0;
-    let lastFpsTime = lastTime;
-    let minFps = 60;
-    let maxFps = 0;
-
-    function loop(now) {
-        frames++;
-        const delta = now - lastTime;
-        lastTime = now;
-
-        if (1000/delta < minFps && frames > 5) minFps = 1000/delta;
-        if (1000/delta > maxFps) maxFps = 1000/delta;
-
-        if (now - lastFpsTime >= 1000) {
-            document.getElementById('fps-cur').textContent = Math.round(frames);
-            document.getElementById('fps-min').textContent = Math.round(minFps);
-            document.getElementById('fps-max').textContent = Math.round(maxFps);
-            frames = 0; minFps = 60; maxFps = 0; lastFpsTime = now;
         }
 
-        // --- AUDIO PITCH MODULATION ---
-        if (isAudioActive && osc) {
-            // Simulate pitch changing with speed
-            const pitch = 100 + (Math.abs(joystick.dx)*50);
-            osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+        async function seedLegacyData() {
+            // Convert Legacy to Device-First
+            const updates = {};
+            const cleanKey = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const merge = (carrier, src) => {
+                for (const [name, info] of Object.entries(src)) {
+                    const k = cleanKey(name);
+                    if (!updates[k]) updates[k] = { name: name, last_updated: Date.now() };
+                    updates[k][carrier] = info;
+                    updates[k][carrier].last_updated = Date.now();
+                    // Fix missing fields
+                    if(carrier!=='tmo' && info.total && !info.monthly) updates[k][carrier].monthly = calc36_Mo(info.total);
+                }
+            };
+            merge('att', LEGACY_EDLP_DATA.att);
+            merge('vzw', LEGACY_EDLP_DATA.vzw);
+            merge('tmo', LEGACY_EDLP_DATA.tmo);
+
+            devicesData = updates;
+            await saveToGitHub(devicesData, "Initial Seed of Legacy Data");
+            renderTable();
         }
 
-        // --- DOM THRASHING (Simulated) ---
-        frameCounter++;
-        document.getElementById('money-display').textContent = `$${frameCounter}`;
-        
-        // --- LOGIC ---
-        let trashGrid = new SpatialGrid(worldSize, worldSize, 200);
-        for(const obj of worldObjects) trashGrid.add(obj);
+        async function saveToGitHub(newData, msg = "Update EDLP Data") {
+            const content = toBase64(JSON.stringify(newData, null, 2));
+            
+            const body = {
+                message: msg,
+                content: content,
+                sha: currentSha // Required to update existing file
+            };
 
-        for (let b of bullets) {
-            b.x += b.dx; b.y += b.dy;
-            if(b.x < 0 || b.x > worldSize) b.dx *= -1;
-            if(b.y < 0 || b.y > worldSize) b.dy *= -1;
-            const nearby = trashGrid.getNearby(b.x, b.y);
-            for(const t of nearby) {
-                const dist = Math.hypot(b.x - (t.x + t.width/2), b.y - (t.y + t.height/2));
+            const response = await fetch(API_URL, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${userToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) throw new Error("Save Failed: " + response.statusText);
+
+            const result = await response.json();
+            currentSha = result.content.sha; // Update SHA for next write
+            console.log("Save Successful. New SHA:", currentSha);
+        }
+
+        // --- 6. MATH & HELPERS (Same as v6) ---
+        const roundMo = (n) => Math.round((parseFloat(n)||0)*100)/100;
+        const roundTot = (n) => Math.round(parseFloat(n)||0);
+        const calc36_Tot = (m) => roundTot(m*36);
+        const calc36_Mo = (t) => roundMo(t/36);
+        const calcTmo_Mo = (t, d) => roundMo((t-d)/24);
+        const calcTmo_Tot = (m, d) => roundTot(d+(m*24));
+        const calcTmo_Red = (t) => roundMo(t/24);
+        const calcTmo_TotFromRed = (r) => roundTot(r*24);
+
+        function formatTimestamp(ts) {
+            if (!ts) return '';
+            const d = new Date(ts);
+            const now = new Date();
+            const diff = (now-d)/(1000*60*60);
+            const str = `${d.getMonth()+1}/${d.getDate()}`;
+            if (diff < 72) {
+                const h = d.getHours().toString().padStart(2,'0');
+                const m = d.getMinutes().toString().padStart(2,'0');
+                return `<span class="ts-recent">${str} ${h}:${m}</span>`;
             }
+            return str;
         }
 
-        if (joystick.active) {
-            player.x += joystick.dx * player.speed;
-            player.y += joystick.dy * player.speed;
-            player.angle = Math.atan2(joystick.dy, joystick.dx);
-            player.turretAngle = player.angle; 
+        // --- 7. UI LOGIC (Same as v6) ---
+        const deviceListEl = document.getElementById('device-list');
+        const searchBar = document.getElementById('search-bar');
+        const btnSaveTop = document.getElementById('btn-save-top');
+        const btnSaveBottom = document.getElementById('btn-save-bottom');
+        const hkstToggle = document.getElementById('cb-hkst');
+
+        // Filter Logic
+        const colMap = {
+            'cb-att-mo': 'c-att-mo', 'cb-att-tot': 'c-att-tot',
+            'cb-vzw-mo': 'c-vzw-mo', 'cb-vzw-tot': 'c-vzw-tot',
+            'cb-tmo-red': 'c-tmo-red', 'cb-tmo-dp': 'c-tmo-dp', 'cb-tmo-mo': 'c-tmo-mo', 'cb-tmo-tot': 'c-tmo-tot'
+        };
+        ['att', 'vzw', 'tmo'].forEach(c => {
+            document.getElementById(`m-${c}`).addEventListener('change', (e) => {
+                document.querySelectorAll(`input[data-group="${c}"]`).forEach(cb => {
+                    cb.checked = e.target.checked;
+                    toggleCol(colMap[cb.id], e.target.checked);
+                });
+            });
+        });
+        Object.keys(colMap).forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => toggleCol(colMap[id], e.target.checked));
+        });
+        function toggleCol(cls, show) {
+            document.querySelectorAll('.'+cls).forEach(c => c.classList.toggle('hide-col', !show));
         }
-        camera.x = player.x - width / 2;
-        camera.y = player.y - height / 2;
+        hkstToggle.addEventListener('change', renderTable);
 
-        ctx.clearRect(0, 0, width, height);
-        ctx.save();
-        ctx.translate(-camera.x, -camera.y);
+        // Render Logic
+        function renderTable() {
+            deviceListEl.innerHTML = '';
+            const term = searchBar.value.toLowerCase();
+            const showHkstOnly = hkstToggle.checked;
+            const keys = Object.keys(devicesData).sort((a,b) => (devicesData[a].name||'').localeCompare(devicesData[b].name||''));
 
-        const startCol = Math.floor(camera.x / gridSize);
-        const endCol = startCol + (width / gridSize) + 1;
-        const startRow = Math.floor(camera.y / gridSize);
-        const endRow = startRow + (height / gridSize) + 1;
-        for (let c = startCol; c <= endCol; c++) {
-            for (let r = startRow; r <= endRow; r++) {
-                ctx.fillStyle = (c + r) % 2 === 0 ? '#48D43B' : '#3eb532';
-                ctx.fillRect(c * gridSize, r * gridSize, gridSize, gridSize);
-            }
+            keys.forEach(key => {
+                const d = devicesData[key];
+                const nameLower = d.name.toLowerCase();
+                let isVisible = true;
+                if (term) {
+                    if (!nameLower.includes(term)) isVisible = false;
+                } else if (showHkstOnly) {
+                    if (!HKST_INVENTORY.some(h => nameLower.includes(h.toLowerCase()))) isVisible = false;
+                }
+                if (!isVisible) return;
+
+                const getTs = (c) => c?.last_updated || d.last_updated;
+                const row = document.createElement('tr');
+                row.className = 'data-row';
+                row.dataset.key = key;
+                row.dataset.original = JSON.stringify(d);
+
+                const tmoTot = parseFloat(d.tmo?.total) || 0;
+                const redVal = tmoTot ? calcTmo_Red(tmoTot) : '';
+                const val = (v) => (v===0 || v==="0" || !v) ? "" : v;
+
+                row.innerHTML = `
+                    <td class="col-name">
+                        <div class="name-display">${d.name}</div>
+                        <div class="name-input-wrapper"><input type="text" class="input-name" value="${d.name}"></div>
+                        <div class="name-lock-wrapper"><i class="fas fa-lock"></i> &nbsp;Edit Title</div>
+                    </td>
+                    <td class="c-att-mo"><input type="number" class="i-att-mo" value="${val(d.att?.monthly)}" step="0.01"><div class="row-meta ts-label">${formatTimestamp(getTs(d.att))}</div></td>
+                    <td class="c-att-tot"><input type="number" class="i-att-tot" value="${val(d.att?.total)}"><div class="row-meta"></div></td>
+                    <td class="c-vzw-mo"><input type="number" class="i-vzw-mo" value="${val(d.vzw?.monthly)}" step="0.01"><div class="row-meta ts-label">${formatTimestamp(getTs(d.vzw))}</div></td>
+                    <td class="c-vzw-tot"><input type="number" class="i-vzw-tot" value="${val(d.vzw?.total)}"><div class="row-meta"></div></td>
+                    <td class="c-tmo-red"><input type="number" class="i-tmo-red input-danger" value="${val(redVal)}" step="0.01"><div class="row-meta"></div></td>
+                    <td class="c-tmo-dp"><input type="number" class="i-tmo-dp" value="${val(d.tmo?.dp)}"><div class="row-meta"></div></td>
+                    <td class="c-tmo-mo"><input type="number" class="i-tmo-mo" value="${val(d.tmo?.monthly)}" step="0.01"><div class="row-meta ts-label">${formatTimestamp(getTs(d.tmo))}</div></td>
+                    <td class="c-tmo-tot"><input type="number" class="i-tmo-tot" value="${val(d.tmo?.total)}"><div class="row-meta"></div></td>
+                    <td class="col-actions">
+                        <div class="row-actions">
+                            <button class="btn-icon btn-save-row" title="Save"><i class="fas fa-save"></i></button>
+                            <button class="btn-icon btn-verify-row" title="Verify"><i class="fas fa-check-circle"></i></button>
+                            <button class="btn-icon btn-del-row" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                `;
+
+                const activate = () => {
+                    document.querySelectorAll('tr.active').forEach(r => r!==row && r.classList.remove('active'));
+                    row.classList.add('active');
+                };
+                row.addEventListener('click', (e) => { if(e.target.tagName !== 'INPUT') activate(); });
+                row.addEventListener('focusin', activate);
+                row.querySelector('.name-lock-wrapper').addEventListener('click', (e) => { e.stopPropagation(); row.querySelector('.col-name').classList.add('name-unlocked'); });
+
+                attachRowListeners(row, key);
+                deviceListEl.appendChild(row);
+            });
+            Object.keys(colMap).forEach(id => toggleCol(colMap[id], document.getElementById(id).checked));
         }
 
-        for (const obj of worldObjects) drawTank(obj);
-        drawTank(player);
-        
-        ctx.fillStyle = 'yellow';
-        for(const b of bullets) {
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, 5, 0, Math.PI*2);
-            ctx.fill();
+        function attachRowListeners(row, key) {
+            const inputs = row.querySelectorAll('input');
+            const saveBtn = row.querySelector('.btn-save-row');
+            const verifyBtn = row.querySelector('.btn-verify-row');
+            const delBtn = row.querySelector('.btn-del-row');
+
+            inputs.forEach(inp => {
+                inp.addEventListener('input', (e) => {
+                    dirtyRows.add(key);
+                    updateSaveAllButtons();
+                    const t = e.target;
+                    
+                    if (t.classList.contains('i-att-tot')) row.querySelector('.i-att-mo').value = t.value ? calc36_Mo(t.value) : '';
+                    if (t.classList.contains('i-att-mo')) row.querySelector('.i-att-tot').value = t.value ? calc36_Tot(t.value) : '';
+                    
+                    if (t.classList.contains('i-vzw-tot')) row.querySelector('.i-vzw-mo').value = t.value ? calc36_Mo(t.value) : '';
+                    if (t.classList.contains('i-vzw-mo')) row.querySelector('.i-vzw-tot').value = t.value ? calc36_Tot(t.value) : '';
+
+                    const dpIn = row.querySelector('.i-tmo-dp');
+                    const moIn = row.querySelector('.i-tmo-mo');
+                    const totIn = row.querySelector('.i-tmo-tot');
+                    const redIn = row.querySelector('.i-tmo-red');
+                    const dp = parseFloat(dpIn.value)||0;
+
+                    if (t === redIn) { const tot = t.value ? calcTmo_TotFromRed(t.value) : ''; totIn.value = tot; moIn.value = tot ? calcTmo_Mo(tot, dp) : ''; }
+                    if (t === totIn) { const tot = parseFloat(t.value); moIn.value = t.value ? calcTmo_Mo(tot, dp) : ''; redIn.value = t.value ? calcTmo_Red(tot) : ''; }
+                    if (t === moIn) { const mo = parseFloat(t.value); const tot = t.value ? calcTmo_Tot(mo, dp) : ''; totIn.value = tot; redIn.value = tot ? calcTmo_Red(tot) : ''; }
+                    if (t === dpIn && totIn.value) moIn.value = calcTmo_Mo(parseFloat(totIn.value), dp);
+                });
+            });
+
+            saveBtn.addEventListener('click', (e) => { e.stopPropagation(); saveRow(row, key); });
+            verifyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const curr = { ...JSON.parse(row.dataset.original) };
+                const now = Date.now();
+                if(!curr.att) curr.att={}; if(!curr.vzw) curr.vzw={}; if(!curr.tmo) curr.tmo={};
+                curr.att.last_updated = now; curr.vzw.last_updated = now; curr.tmo.last_updated = now;
+                saveToGitHub(Object.assign(devicesData, { [key]: curr }));
+            });
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if(confirm('Delete?')) {
+                    delete devicesData[key];
+                    saveToGitHub(devicesData, "Deleted Device");
+                }
+            });
         }
 
-        ctx.restore();
-        requestAnimationFrame(loop);
-    }
+        async function saveRow(row, key) {
+            const orig = JSON.parse(row.dataset.original);
+            const now = Date.now();
+            const getVal = (sel) => parseFloat(row.querySelector(sel).value) || 0;
+            const curr = {
+                name: row.querySelector('.input-name').value,
+                att: { monthly: getVal('.i-att-mo'), total: getVal('.i-att-tot'), last_updated: orig.att?.last_updated||orig.last_updated },
+                vzw: { monthly: getVal('.i-vzw-mo'), total: getVal('.i-vzw-tot'), last_updated: orig.vzw?.last_updated||orig.last_updated },
+                tmo: { dp: getVal('.i-tmo-dp'), monthly: getVal('.i-tmo-mo'), total: getVal('.i-tmo-tot'), last_updated: orig.tmo?.last_updated||orig.last_updated }
+            };
 
-    requestAnimationFrame(loop);
+            if (curr.att.total !== (orig.att?.total||0)) curr.att.last_updated = now;
+            if (curr.vzw.total !== (orig.vzw?.total||0)) curr.vzw.last_updated = now;
+            if (curr.tmo.total !== (orig.tmo?.total||0) || curr.tmo.dp !== (orig.tmo?.dp||0)) curr.tmo.last_updated = now;
 
-</script>
+            devicesData[key] = curr;
+            await saveToGitHub(devicesData);
+            dirtyRows.delete(key);
+            updateSaveAllButtons();
+        }
+
+        function updateSaveAllButtons() {
+            const hasDirty = dirtyRows.size > 0;
+            btnSaveTop.classList.toggle('visible', hasDirty);
+            btnSaveBottom.classList.toggle('visible', hasDirty);
+            btnSaveTop.textContent = `Save ${dirtyRows.size} Changes`;
+            btnSaveBottom.textContent = `Save ${dirtyRows.size} Changes`;
+        }
+
+        const handleBulkSave = async () => {
+            const now = Date.now();
+            dirtyRows.forEach(key => {
+                const row = document.querySelector(`tr[data-key="${key}"]`);
+                if (row) {
+                    // Logic duplication from saveRow but optimized for bulk
+                    const orig = JSON.parse(row.dataset.original);
+                    const getVal = (sel) => parseFloat(row.querySelector(sel).value) || 0;
+                    const curr = {
+                        name: row.querySelector('.input-name').value,
+                        att: { monthly: getVal('.i-att-mo'), total: getVal('.i-att-tot'), last_updated: orig.att?.last_updated||orig.last_updated },
+                        vzw: { monthly: getVal('.i-vzw-mo'), total: getVal('.i-vzw-tot'), last_updated: orig.vzw?.last_updated||orig.last_updated },
+                        tmo: { dp: getVal('.i-tmo-dp'), monthly: getVal('.i-tmo-mo'), total: getVal('.i-tmo-tot'), last_updated: orig.tmo?.last_updated||orig.last_updated }
+                    };
+                    if (curr.att.total !== (orig.att?.total||0)) curr.att.last_updated = now;
+                    if (curr.vzw.total !== (orig.vzw?.total||0)) curr.vzw.last_updated = now;
+                    if (curr.tmo.total !== (orig.tmo?.total||0) || curr.tmo.dp !== (orig.tmo?.dp||0)) curr.tmo.last_updated = now;
+                    devicesData[key] = curr;
+                }
+            });
+            await saveToGitHub(devicesData, "Bulk Update");
+            dirtyRows.clear();
+            updateSaveAllButtons();
+        };
+
+        btnSaveTop.addEventListener('click', handleBulkSave);
+        btnSaveBottom.addEventListener('click', handleBulkSave);
+
+        // Add Row Logic
+        const addRow = document.getElementById('add-row');
+        const addInputs = addRow.querySelectorAll('input');
+        addRow.addEventListener('input', (e) => {
+             const t = e.target;
+             if (t.id === 'new-att-total') document.getElementById('new-att-mo').value = calc36_Mo(t.value);
+             if (t.id === 'new-att-mo') document.getElementById('new-att-total').value = calc36_Tot(t.value);
+             if (t.id === 'new-vzw-total') document.getElementById('new-vzw-mo').value = calc36_Mo(t.value);
+             if (t.id === 'new-vzw-mo') document.getElementById('new-vzw-total').value = calc36_Tot(t.value);
+             const dp = parseFloat(document.getElementById('new-tmo-dp').value)||0;
+             if (t.id === 'new-tmo-total') document.getElementById('new-tmo-mo').value = calcTmo_Mo(t.value, dp);
+             if (t.id === 'new-tmo-mo') document.getElementById('new-tmo-total').value = calcTmo_Tot(t.value, dp);
+        });
+
+        document.getElementById('btn-add-device').addEventListener('click', async () => {
+            const name = document.getElementById('new-name').value;
+            if (!name) return alert("Required");
+            const key = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const now = Date.now();
+            const newDevice = {
+                name: name,
+                att: { monthly: parseFloat(document.getElementById('new-att-mo').value)||0, total: parseFloat(document.getElementById('new-att-total').value)||0, last_updated: now },
+                vzw: { monthly: parseFloat(document.getElementById('new-vzw-mo').value)||0, total: parseFloat(document.getElementById('new-vzw-total').value)||0, last_updated: now },
+                tmo: { dp: parseFloat(document.getElementById('new-tmo-dp').value)||0, monthly: parseFloat(document.getElementById('new-tmo-mo').value)||0, total: parseFloat(document.getElementById('new-tmo-total').value)||0, last_updated: now },
+                last_updated: now
+            };
+            devicesData[key] = newDevice;
+            await saveToGitHub(devicesData, "Added New Device");
+            addInputs.forEach(i => i.value = '');
+        });
+
+        searchBar.addEventListener('input', renderTable);
+    </script>
 </body>
 </html>
