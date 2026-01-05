@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>installment manager (v8 github)</title>
+    <title>Installment Manager (Beta v18)</title>
     
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,61 +20,35 @@
 
         h1 {
             text-align: center;
-            margin-bottom: 5px;
+            margin-bottom: 15px;
             font-weight: 800;
             letter-spacing: -0.5px;
+            position: relative;
         }
-        
-        .header-meta {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 0.8em;
-            color: #666;
+
+        /* v18: Settings Button */
+        #btn-settings {
+            position: absolute;
+            right: 0;
+            top: 0;
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #606770;
+            cursor: pointer;
         }
+        #btn-settings:hover { color: #1877f2; }
 
         #container {
             width: fit-content;
+            min-width: 900px;
             margin: 0 auto;
             background: white;
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             position: relative;
-            min-width: 800px;
         }
-
-        /* --- LOGIN MODAL --- */
-        #login-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        #login-box {
-            background: white; padding: 30px; border-radius: 8px; width: 300px; text-align: center;
-        }
-        #login-input {
-            width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px;
-        }
-        #btn-login {
-            background: #1877f2; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;
-        }
-        .hidden { display: none !important; }
-
-        /* --- HEADER BUTTONS --- */
-        .top-actions {
-            position: absolute; top: 15px; right: 15px; display: flex; gap: 10px;
-        }
-        .btn-header {
-            background: none; border: 1px solid #ccc; padding: 5px 10px;
-            font-size: 11px; cursor: pointer; border-radius: 4px; color: #666;
-        }
-        .btn-header:hover { background: #f0f2f5; color: #000; }
-        #btn-logout:hover { border-color: #d93025; color: #d93025; }
-        #btn-reset-data { border-color: #f0ad4e; color: #f0ad4e; }
-        #btn-reset-data:hover { background: #fff3cd; color: #856404; }
 
         /* --- FILTERS BAR --- */
         #filter-bar {
@@ -85,8 +59,9 @@
             border-radius: 6px;
             margin-bottom: 15px;
             border: 1px solid #ccc;
-            flex-wrap: wrap;
-            justify-content: center;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            justify-content: flex-start;
         }
         
         .filter-section {
@@ -95,6 +70,7 @@
             gap: 5px;
             border-right: 1px solid #ccc;
             padding-right: 15px;
+            white-space: nowrap;
         }
         .filter-section:last-child { border-right: none; }
 
@@ -158,8 +134,16 @@
 
         /* Hiding Logic */
         .hide-col { display: none !important; }
+        .hide-row { display: none !important; }
 
         /* Input Fields */
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            width: 100%;
+        }
+
         input[type="text"], input[type="number"] {
             width: 50px;
             padding: 4px 2px;
@@ -177,7 +161,56 @@
             background-color: #fff;
             border: 2px solid #1877f2;
             outline: none;
+            z-index: 2;
         }
+
+        /* Lock Button Styling */
+        .btn-lock {
+            background-color: #f0f2f5;
+            border: 1px solid #000;
+            border-left: none;
+            color: #ccc;
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 11px;
+            transition: background 0.1s;
+        }
+        
+        .btn-lock:hover { background-color: #e4e6eb; color: #666; }
+        
+        .btn-lock.locked {
+            color: #000;
+            background-color: #d1d1d1;
+        }
+
+        .btn-lock.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+            background-color: #e0e0e0;
+        }
+
+        .group-tmo input[type="number"] {
+            border-right: none; 
+        }
+
+        .input-disabled {
+            background-color: #e0e0e0 !important;
+            color: #999 !important;
+            border-color: #ccc !important;
+            pointer-events: none;
+        }
+
+        .icon-warn {
+            color: #d93025;
+            font-size: 12px;
+            margin-left: 6px;
+            align-self: center;
+            display: none; 
+        }
+        .icon-warn.visible { display: inline-block; }
 
         /* --- ACCORDION ROW BEHAVIOR --- */
         tr.data-row {
@@ -190,46 +223,36 @@
             border-left: 3px solid #1877f2;
         }
 
-        /* Hidden Elements */
         .row-meta, .row-actions, .name-lock-wrapper { display: none !important; }
         
         tr.active .row-meta { display: block !important; margin-top: 4px; }
-        tr.active .row-actions { display: flex !important; gap: 5px; justify-content: center; margin-top: 5px; }
+        tr.active .row-actions { display: flex !important; gap: 10px; justify-content: center; margin-top: 5px; align-items: center; }
         tr.active .name-lock-wrapper { display: flex !important; align-items: center; font-size: 0.75em; color: #1877f2; margin-top: 2px; cursor: pointer; }
 
-        /* Timestamp Styling */
-        .ts-label {
-            font-size: 10px;
-            color: #666;
-            text-align: center;
-        }
+        .ts-label { font-size: 10px; color: #666; text-align: center; }
         .ts-recent { color: #008000; font-weight: bold; }
 
-        /* Name Field Logic */
         .name-display { font-weight: bold; padding: 5px 2px; }
         .name-input-wrapper { display: none; }
         .name-unlocked .name-display { display: none; }
         .name-unlocked .name-input-wrapper { display: block; }
 
-        /* Group Headers */
-        .group-att { background-color: #e3f2fd; color: #000; border: 1px solid #999; }
-        .group-vzw { background-color: #ffebee; color: #000; border: 1px solid #999; }
-        .group-tmo { background-color: #fce4ec; color: #000; border: 1px solid #999; }
+        .group-att { background-color: #87CEEB; color: #000; border: 1px solid #999; }
+        .group-vzw { background-color: #ff6161; color: #000; border: 1px solid #999; }
+        .group-tmo { background-color: #ff61b3; color: #000; border: 1px solid #999; }
 
-        /* Danger Zone (TMO Red Column) */
-        .danger-header { background-color: #ffebee !important; color: #d93025 !important; font-weight: 900 !important; border-bottom: 2px solid #d93025; }
-        input.input-danger { border: 1px solid #d93025; background-color: #fff5f5; color: #d93025; }
-        input.input-danger:focus { border: 2px solid #d93025; }
+        .danger-header { background-color: #ff61b3 !important; color: #000 !important; border-bottom: 2px solid #d93025; }
+        input.input-danger { border: 1px solid #ff0303; background-color: #000 !important; color: #ff0303 !important; }
+        input.input-danger:focus { border: 2px solid #ff0303; }
 
-        /* Icon Buttons */
         .btn-icon {
-            background: none; border: none; cursor: pointer; font-size: 14px; padding: 5px;
+            background: none; border: none; cursor: pointer; 
+            font-size: 18px; padding: 0 10px; display: inline-flex;
+            align-items: center; height: 100%;
         }
         .btn-save-row { color: #1877f2; }
-        .btn-verify-row { color: #42b72a; }
         .btn-del-row { color: #d93025; }
 
-        /* Add Row Styling */
         #add-row { background-color: #fff; border-bottom: 2px solid #000; }
         #add-row input { border: 1px dashed #666; }
         
@@ -240,35 +263,59 @@
             padding-top: 10px;
             border-top: 1px solid #ccc;
         }
+
+        /* Developer Console */
+        #dev-console-wrapper {
+            margin-top: 30px; padding-top: 15px; border-top: 2px dashed #ccc; text-align: left;
+        }
+        #dev-console-container { margin-top: 10px; display: none; }
+        #dev-console-output {
+            background-color: #f5f5f5; border: 1px solid #999; color: #333;
+            font-family: monospace; font-size: 11px; padding: 10px;
+            height: 150px; overflow-y: scroll; white-space: pre-wrap; word-wrap: break-word;
+        }
+        .btn-copy-log {
+            background-color: #606770; color: white; border: none;
+            padding: 5px 10px; border-radius: 4px; cursor: pointer;
+            margin-top: 5px; font-size: 12px;
+        }
+
+        /* v18: Settings Modal */
+        #settings-modal {
+            display: none;
+            position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: #fff; padding: 20px; border-radius: 8px; width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .modal-header { font-weight: bold; margin-bottom: 15px; font-size: 16px; }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; font-size: 11px; color: #666; margin-bottom: 4px; }
+        .form-group input { width: 100%; box-sizing: border-box; text-align: left; }
+        .modal-actions { text-align: right; margin-top: 15px; }
+        .btn-modal { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background: #e4e6eb; color: #333; margin-right: 5px; }
+        .btn-save-settings { background: #1877f2; color: white; }
+
     </style>
 </head>
 <body>
 
-    <!-- Login Modal -->
-    <div id="login-modal">
-        <div id="login-box">
-            <h2>Admin Access</h2>
-            <p style="font-size:0.9em; color:#666;">Enter GitHub Bot Token</p>
-            <input type="password" id="login-input" placeholder="ghp_...">
-            <button id="btn-login">Connect</button>
-        </div>
-    </div>
-
-    <h1>installment manager (v8 github)</h1>
-    <div class="header-meta" id="repo-status">Not Connected</div>
+    <h1>
+        Installment Manager (Beta v18)
+        <button id="btn-settings" title="Cloud Settings"><i class="fas fa-cog"></i></button>
+    </h1>
 
     <div id="container">
-        <div class="top-actions">
-            <button id="btn-reset-data" class="btn-header">⚠ Force Reset Data</button>
-            <button id="btn-logout" class="btn-header">Logout</button>
-        </div>
         
         <!-- Filter Bar -->
         <div id="filter-bar">
-            <!-- HKST Toggle -->
+            <!-- TMO Incompatible Toggle -->
             <div class="filter-section" style="border-right: 2px solid #000;">
-                <label class="filter-label" style="font-weight:bold; color:#000;">
-                    <input type="checkbox" id="cb-hkst"> Show only recent HKST inventory
+                <label class="filter-label" style="font-weight:bold; color:#d93025;">
+                    <input type="checkbox" id="cb-incompatible"> Edit and show incompatible items
                 </label>
             </div>
 
@@ -293,8 +340,8 @@
                 <label class="filter-master"><input type="checkbox" id="m-tmo" checked> T-Mobile</label>
                 <div class="filter-subs">
                     <label class="filter-label"><input type="checkbox" id="cb-tmo-red" data-group="tmo" checked style="color:#d93025; font-weight:bold;"> NO DP</label>
-                    <label class="filter-label"><input type="checkbox" id="cb-tmo-dp" data-group="tmo" checked> DP</label>
-                    <label class="filter-label"><input type="checkbox" id="cb-tmo-mo" data-group="tmo" checked> Mo</label>
+                    <label class="filter-label"><input type="checkbox" id="cb-tmo-dp" data-group="tmo"> DP</label>
+                    <label class="filter-label"><input type="checkbox" id="cb-tmo-mo" data-group="tmo"> Mo</label>
                     <label class="filter-label"><input type="checkbox" id="cb-tmo-tot" data-group="tmo" checked> Total</label>
                 </div>
             </div>
@@ -311,186 +358,273 @@
                 <thead>
                     <tr>
                         <th class="col-name">Device</th>
+                        
                         <!-- ATT Headers -->
-                        <th class="group-att c-att-mo">$/mo</th><th class="group-att c-att-tot">Total</th>
+                        <th class="group-att c-att-mo">$/mo</th>
+                        <th class="group-att c-att-tot">Total</th>
+                        
                         <!-- VZW Headers -->
-                        <th class="group-vzw c-vzw-mo">$/mo</th><th class="group-vzw c-vzw-tot">Total</th>
+                        <th class="group-vzw c-vzw-mo">$/mo</th>
+                        <th class="group-vzw c-vzw-tot">Total</th>
+                        
                         <!-- TMO Headers -->
                         <th class="group-tmo c-tmo-red danger-header">MO IF<br>NO DP</th>
                         <th class="group-tmo c-tmo-dp">Down</th>
                         <th class="group-tmo c-tmo-mo">Mo<br><span style="font-size:0.7em; font-weight:normal;">(after dp)</span></th>
                         <th class="group-tmo c-tmo-tot">Total</th>
+                        
                         <th class="col-actions" style="width: 50px;"></th>
                     </tr>
                     
                     <!-- Add New Row -->
                     <tr id="add-row">
                         <td><input type="text" id="new-name" class="input-name" placeholder="New Device Name"></td>
-                        <td class="c-att-mo"><input type="number" id="new-att-mo" step="0.01"></td><td class="c-att-tot"><input type="number" id="new-att-total"></td>
-                        <td class="c-vzw-mo"><input type="number" id="new-vzw-mo" step="0.01"></td><td class="c-vzw-tot"><input type="number" id="new-vzw-total"></td>
-                        <td class="c-tmo-red"><input type="number" id="new-tmo-red" class="input-danger" step="0.01"></td>
-                        <td class="c-tmo-dp"><input type="number" id="new-tmo-dp"></td>
-                        <td class="c-tmo-mo"><input type="number" id="new-tmo-mo" step="0.01"></td>
-                        <td class="c-tmo-tot"><input type="number" id="new-tmo-total"></td>
+                        
+                        <td class="c-att-mo group-att"><input type="number" id="new-att-mo" step="0.01"></td>
+                        <td class="c-att-tot group-att"><input type="number" id="new-att-total"></td>
+                        
+                        <td class="c-vzw-mo group-vzw"><input type="number" id="new-vzw-mo" step="0.01"></td>
+                        <td class="c-vzw-tot group-vzw"><input type="number" id="new-vzw-total"></td>
+                        
+                        <td class="c-tmo-red group-tmo"><input type="number" id="new-tmo-red" class="input-danger" step="0.01"></td>
+                        <td class="c-tmo-dp group-tmo"><input type="number" id="new-tmo-dp"></td>
+                        <td class="c-tmo-mo group-tmo"><input type="number" id="new-tmo-mo" step="0.01"></td>
+                        <td class="c-tmo-tot group-tmo"><input type="number" id="new-tmo-total"></td>
+                        
                         <td style="text-align:center;"><button id="btn-add-device" class="btn-icon" style="color:green;"><i class="fas fa-plus"></i></button></td>
                     </tr>
                 </thead>
-                <tbody id="device-list"></tbody>
+                <tbody id="device-list">
+                    <!-- Data Rows -->
+                </tbody>
             </table>
-            <div id="loading-msg" style="text-align:center; padding:20px; color:#666;">Waiting for connection...</div>
+            <div id="loading-msg" style="text-align:center; padding:20px; color:#666;">Connecting...</div>
         </div>
 
+        <!-- Bottom Controls -->
         <div class="sticky-footer">
             <button class="btn-save-all" id="btn-save-bottom">Save All Changes</button>
         </div>
+
+        <!-- Developer Console -->
+        <div id="dev-console-wrapper">
+            <label><input type="checkbox" id="dev-console-toggle"> Show Developer Console</label>
+            <div id="dev-console-container">
+                <pre id="dev-console-output"></pre>
+                <button class="btn-copy-log" id="btn-copy-log">Copy Log</button>
+            </div>
+        </div>
     </div>
 
-    <!-- MAIN SCRIPT (GitHub Logic) -->
-    <script>
-        // --- 1. CONFIGURATION ---
-        const GH_OWNER = "Spamfan";
-        const GH_REPO = "optimizerunstable";
-        const GH_FILE = "edlp_data.json";
-        const API_URL = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
+    <!-- v18 Settings Modal -->
+    <div id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">Cloud Publisher Settings</div>
+            <div class="form-group">
+                <label>GitHub Username</label>
+                <input type="text" id="gh-user" placeholder="e.g. spamfan">
+            </div>
+            <div class="form-group">
+                <label>Repository Name</label>
+                <input type="text" id="gh-repo" placeholder="e.g. optimizerunstable">
+            </div>
+            <div class="form-group">
+                <label>File Path</label>
+                <input type="text" id="gh-path" value="edlp_data.json" readonly>
+            </div>
+            <div class="form-group">
+                <label>Personal Access Token (PAT)</label>
+                <input type="password" id="gh-token" placeholder="ghp_...">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-modal btn-cancel" id="btn-close-settings">Close</button>
+                <button class="btn-modal btn-save-settings" id="btn-save-gh">Save Credentials</button>
+            </div>
+        </div>
+    </div>
 
-        // --- 2. LEGACY DATA (Auto-Seed) ---
-        const LEGACY_EDLP_DATA = {
-            tmo: { 'Flip 4 5G': { dp: 20, mo: 1, total: 44 }, 'Flip 5G': { dp: 20, mo: 1, total: 44 }, 'Galaxy A13 LTE': { total: 49 }, 'iPhone 15': { dp: 379, mo: 5, total: 499 }, 'iPhone 16': { total: 629 }, 'iPhone 16 Plus': { dp: 549, mo: 7.54, total: 730 }, 'iPhone 16 Pro': { dp: 601 }, 'iPhone 16e': { total: 549 }, 'iPhone 17': { total: 730 }, 'iPhone 17 Pro': { total: 799 }, 'iPhone Air': { total: 899 }, 'Moto G 5G 2025': { dp: 30, mo: 1, total: 54 }, 'Moto G Stylus 2025': { dp: 50, mo: 3.50, total: 134 }, 'REVVL 6': { dp: 30, mo: 0.25, total: 36 } },
-            vzw: { 'Galaxy A03': { total: 36 }, 'Galaxy A16 5G': { total: 120 }, 'Galaxy S24 FE': { total: 650 }, 'Galaxy S25 FE': { total: 651 }, 'Galaxy S25 Plus 5G': { total: 799 }, 'Galaxy Z Flip 4 5G': { total: 650 }, 'iPhone 15': { total: 499 }, 'iPhone 16 Plus': { total: 730 }, 'iPhone 16 Pro': { total: 799 }, 'iPhone 16 Pro Max': { total: 1100 }, 'iPhone 16e': { total: 550 }, 'iPhone 17': { total: 729 }, 'iPhone 17 Pro': { total: 999 }, 'iPhone 17 Pro Max': { total: 1149 }, 'iPhone Air': { total: 899 }, 'Moto G 5G 2024': { total: 72 }, 'Moto G 5G 2025': { total: 72 }, 'Moto G Power 2025': { total: 108 }, 'One Ace 5G': { total: 101 }, 'TCL Flip 3': { total: 36 } },
-            att: { 'Classic': { total: 56 }, 'Galaxy A11': { total: 36 }, 'Galaxy A15 5G': { total: 36 }, 'Galaxy A16 5G': { total: 119 }, 'Galaxy A35 5G': { total: 99 }, 'Galaxy S24 FE': { total: 612 }, 'Galaxy S25 FE': { total: 612 }, 'Galaxy S25 Plus 5G': { total: 799 }, 'Galaxy S25 Ultra 5G': { total: 1149 }, 'iPhone 15': { total: 499 }, 'iPhone 16 Plus': { total: 730 }, 'iPhone 16 Pro': { total: 800 }, 'iPhone 16e': { total: 550 }, 'iPhone 17': { total: 729 }, 'iPhone 17 Pro': { total: 1199 }, 'iPhone Air': { total: 899 }, 'Moto G Stylus 2025': { total: 180 } }
+    <!-- Firebase Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // --- LOGGER ---
+        function log(msg) {
+            const out = document.getElementById('dev-console-output');
+            const now = new Date();
+            const ts = now.toISOString().split('T')[1].slice(0,-1); 
+            out.textContent += `[${ts}] ${msg}\n`;
+            out.scrollTop = out.scrollHeight;
+        }
+
+        // --- CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHVW6d6n-lS43mf9DIsSYJjzBWvk4B1R4",
+            authDomain: "optimizer-data.firebaseapp.com",
+            databaseURL: "https://optimizer-data-default-rtdb.firebaseio.com",
+            projectId: "optimizer-data",
+            storageBucket: "optimizer-data.firebasestorage.app",
+            messagingSenderId: "162386405726",
+            appId: "1:162386405726:web:a5f22c3810152949b947cf"
         };
 
-        const HKST_INVENTORY = [ "Galaxy A03", "Galaxy A16", "Galaxy S24 FE", "Galaxy S25 FE", "Galaxy S25 Plus", "Galaxy Z Flip 4", "iPhone 15", "iPhone 16 Plus", "iPhone 16 Pro Max", "iPhone 16e", "iPhone Air", "Moto G 5G 2024", "Moto G 5G 2025", "Moto G Power 2025", "One Ace 5G", "TCL Flip 3" ];
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-        // --- 3. STATE ---
+        // --- STATE ---
         let devicesData = {};
-        let currentSha = null;
-        let dirtyRows = new Set();
-        let userToken = localStorage.getItem('gh_token');
+        let dirtyRows = new Set(); 
+        let isSaving = false;
 
-        // --- 4. DOM & INIT ---
-        const loginModal = document.getElementById('login-modal');
-        const loginInput = document.getElementById('login-input');
-        const btnLogin = document.getElementById('btn-login');
-        const btnLogout = document.getElementById('btn-logout');
-        const btnReset = document.getElementById('btn-reset-data');
-        const loadingMsg = document.getElementById('loading-msg');
-        const repoStatus = document.getElementById('repo-status');
+        const TMO_EXCLUDED = [
+            /Galaxy S\d+/i,
+            /One Ace 5G/i,
+            /Z Flip 4/i,
+            /Galaxy Z Flip 4/i
+        ];
 
-        if (userToken) {
-            loginModal.classList.add('hidden');
-            loadFromGitHub();
-        }
+        // --- DOM ---
+        const deviceListEl = document.getElementById('device-list');
+        const searchBar = document.getElementById('search-bar');
+        const btnSaveTop = document.getElementById('btn-save-top');
+        const btnSaveBottom = document.getElementById('btn-save-bottom');
+        const incompatibleToggle = document.getElementById('cb-incompatible');
+        
+        // --- v18 SETTINGS LOGIC ---
+        const btnSettings = document.getElementById('btn-settings');
+        const settingsModal = document.getElementById('settings-modal');
+        const btnCloseSettings = document.getElementById('btn-close-settings');
+        const btnSaveGh = document.getElementById('btn-save-gh');
 
-        btnLogin.addEventListener('click', () => {
-            const token = loginInput.value.trim();
-            if (!token.startsWith('ghp_')) return alert('Invalid Token format');
-            userToken = token;
-            localStorage.setItem('gh_token', userToken);
-            loginModal.classList.add('hidden');
-            loadFromGitHub();
+        btnSettings.addEventListener('click', () => {
+            const config = JSON.parse(localStorage.getItem('gh_config') || '{}');
+            document.getElementById('gh-user').value = config.user || 'spamfan';
+            document.getElementById('gh-repo').value = config.repo || 'optimizerunstable';
+            document.getElementById('gh-token').value = config.token || '';
+            settingsModal.style.display = 'flex';
         });
 
-        btnLogout.addEventListener('click', () => {
-            localStorage.removeItem('gh_token');
-            location.reload();
+        btnCloseSettings.addEventListener('click', () => settingsModal.style.display = 'none');
+
+        btnSaveGh.addEventListener('click', () => {
+            const user = document.getElementById('gh-user').value.trim();
+            const repo = document.getElementById('gh-repo').value.trim();
+            const token = document.getElementById('gh-token').value.trim();
+            if (!user || !repo || !token) return alert("All fields required");
+            localStorage.setItem('gh_config', JSON.stringify({ user, repo, token }));
+            settingsModal.style.display = 'none';
+            log("✅ GitHub credentials saved locally.");
         });
 
-        btnReset.addEventListener('click', () => {
-            if (confirm("⚠️ WARNING: This will DELETE all current data on GitHub and replace it with the October Legacy snapshot.\n\nAre you sure?")) {
-                seedLegacyData();
+        // --- GITHUB PUBLISHER ---
+        async function publishToGitHub(data) {
+            const config = JSON.parse(localStorage.getItem('gh_config') || '{}');
+            if (!config.token) {
+                log("⚠️ No GitHub token found. Skipping publish.");
+                return;
             }
-        });
 
-        // --- 5. GITHUB API LOGIC ---
-        const toBase64 = str => window.btoa(unescape(encodeURIComponent(str)));
-        const fromBase64 = str => decodeURIComponent(escape(window.atob(str)));
-
-        async function loadFromGitHub() {
-            loadingMsg.style.display = 'block';
-            loadingMsg.textContent = "Fetching data from GitHub...";
-            repoStatus.textContent = `Target: ${GH_OWNER}/${GH_REPO}`;
-
+            const url = `https://api.github.com/repos/${config.user}/${config.repo}/contents/edlp_data.json`;
+            const content = btoa(JSON.stringify({ devices: data }, null, 2)); // Base64 encode
+            
             try {
-                const response = await fetch(API_URL, {
-                    headers: { 'Authorization': `token ${userToken}`, 'Accept': 'application/vnd.github.v3+json' }
+                // 1. Get SHA
+                const getReq = await fetch(url, {
+                    headers: { 'Authorization': `token ${config.token}` }
+                });
+                const getRes = await getReq.json();
+                const sha = getRes.sha;
+
+                // 2. Put Update
+                const putReq = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${config.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Update from Installment Manager ${new Date().toISOString()}`,
+                        content: content,
+                        sha: sha
+                    })
                 });
 
-                if (response.status === 404) {
-                    console.log("File not found. Seeding...");
-                    await seedLegacyData();
-                    return;
+                if (putReq.ok) {
+                    log("☁️ SUCCESS: Published to GitHub!");
+                } else {
+                    const err = await putReq.json();
+                    log(`❌ GITHUB ERROR: ${err.message}`);
                 }
-
-                if (!response.ok) throw new Error(`GitHub Error: ${response.status}`);
-
-                const data = await response.json();
-                currentSha = data.sha;
-                const content = fromBase64(data.content);
-                devicesData = JSON.parse(content);
-                
-                loadingMsg.style.display = 'none';
-                dirtyRows.clear();
-                updateSaveAllButtons();
-                renderTable();
-
-            } catch (err) {
-                loadingMsg.textContent = "Error: " + err.message;
-                if (err.message.includes('401') || err.message.includes('403')) {
-                    alert("Auth Error. Check Token.");
-                }
+            } catch (e) {
+                log(`❌ PUBLISH FAILED: ${e.message}`);
             }
         }
 
-        async function seedLegacyData() {
-            loadingMsg.textContent = "Overwriting Cloud Data...";
-            const updates = {};
-            const cleanKey = (name) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const merge = (carrier, src) => {
-                for (const [name, info] of Object.entries(src)) {
-                    const k = cleanKey(name);
-                    if (!updates[k]) updates[k] = { name: name, last_updated: Date.now() };
-                    updates[k][carrier] = info;
-                    updates[k][carrier].last_updated = Date.now();
-                    if(carrier!=='tmo' && info.total && !info.monthly) updates[k][carrier].monthly = calc36_Mo(info.total);
-                }
-            };
-            merge('att', LEGACY_EDLP_DATA.att);
-            merge('vzw', LEGACY_EDLP_DATA.vzw);
-            merge('tmo', LEGACY_EDLP_DATA.tmo);
+        // --- CONSOLE ---
+        const devToggle = document.getElementById('dev-console-toggle');
+        const devContainer = document.getElementById('dev-console-container');
+        devToggle.addEventListener('change', (e) => {
+            devContainer.style.display = e.target.checked ? 'block' : 'none';
+        });
 
-            devicesData = updates;
-            await saveToGitHub(devicesData, "Force Reset to Legacy Data");
-            renderTable();
+        document.getElementById('btn-copy-log').addEventListener('click', () => {
+            const text = document.getElementById('dev-console-output').textContent;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => alert("Log copied!"))
+                    .catch(() => legacyCopy(text));
+            } else {
+                legacyCopy(text);
+            }
+        });
+        function legacyCopy(text) {
+            const ta = document.createElement('textarea'); ta.value = text;
+            ta.style.position = 'fixed'; ta.style.opacity = 0; document.body.appendChild(ta);
+            ta.focus(); ta.select(); try { document.execCommand('copy'); } catch (err) {} document.body.removeChild(ta);
         }
 
-        async function saveToGitHub(newData, msg = "Update EDLP Data") {
-            const content = toBase64(JSON.stringify(newData, null, 2));
-            const body = { message: msg, content: content, sha: currentSha };
+        // --- FILTER LOGIC ---
+        const colMap = {
+            'cb-att-mo': 'c-att-mo', 'cb-att-tot': 'c-att-tot',
+            'cb-vzw-mo': 'c-vzw-mo', 'cb-vzw-tot': 'c-vzw-tot',
+            'cb-tmo-red': 'c-tmo-red', 'cb-tmo-dp': 'c-tmo-dp', 'cb-tmo-mo': 'c-tmo-mo', 'cb-tmo-tot': 'c-tmo-tot'
+        };
 
-            const response = await fetch(API_URL, {
-                method: 'PUT',
-                headers: { 'Authorization': `token ${userToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+        ['att', 'vzw', 'tmo'].forEach(carrier => {
+            document.getElementById(`m-${carrier}`).addEventListener('change', (e) => {
+                const isChecked = e.target.checked;
+                document.querySelectorAll(`input[data-group="${carrier}"]`).forEach(cb => {
+                    cb.checked = isChecked;
+                    toggleCol(colMap[cb.id], isChecked);
+                });
+                renderTable(); 
             });
+        });
 
-            if (!response.ok) throw new Error("Save Failed: " + response.statusText);
+        Object.keys(colMap).forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => toggleCol(colMap[id], e.target.checked));
+        });
 
-            const result = await response.json();
-            currentSha = result.content.sha;
-            console.log("Save Successful. New SHA:", currentSha);
+        function toggleCol(className, isVisible) {
+            const cells = document.querySelectorAll('.' + className);
+            cells.forEach(c => c.classList.toggle('hide-col', !isVisible));
         }
 
-        // --- 6. MATH & HELPERS ---
+        incompatibleToggle.addEventListener('change', renderTable);
+
+        // --- MATH ---
         const roundMo = (n) => Math.round((parseFloat(n)||0)*100)/100;
         const roundTot = (n) => Math.round(parseFloat(n)||0);
+        
         const calc36_Tot = (m) => roundTot(m*36);
         const calc36_Mo = (t) => roundMo(t/36);
+        
         const calcTmo_Mo = (t, d) => roundMo((t-d)/24);
         const calcTmo_Tot = (m, d) => roundTot(d+(m*24));
-        const calcTmo_Red = (t) => roundMo(t/24);
+        const calcTmo_Red = (t) => roundMo(t/24); 
         const calcTmo_TotFromRed = (r) => roundTot(r*24);
 
+        // --- RENDER ---
         function formatTimestamp(ts) {
             if (!ts) return '';
             const d = new Date(ts);
@@ -505,50 +639,45 @@
             return str;
         }
 
-        // --- 7. UI LOGIC ---
-        const deviceListEl = document.getElementById('device-list');
-        const searchBar = document.getElementById('search-bar');
-        const btnSaveTop = document.getElementById('btn-save-top');
-        const btnSaveBottom = document.getElementById('btn-save-bottom');
-        const hkstToggle = document.getElementById('cb-hkst');
-
-        // Filter Logic
-        const colMap = {
-            'cb-att-mo': 'c-att-mo', 'cb-att-tot': 'c-att-tot',
-            'cb-vzw-mo': 'c-vzw-mo', 'cb-vzw-tot': 'c-vzw-tot',
-            'cb-tmo-red': 'c-tmo-red', 'cb-tmo-dp': 'c-tmo-dp', 'cb-tmo-mo': 'c-tmo-mo', 'cb-tmo-tot': 'c-tmo-tot'
-        };
-        ['att', 'vzw', 'tmo'].forEach(c => {
-            document.getElementById(`m-${c}`).addEventListener('change', (e) => {
-                document.querySelectorAll(`input[data-group="${c}"]`).forEach(cb => {
-                    cb.checked = e.target.checked;
-                    toggleCol(colMap[cb.id], e.target.checked);
-                });
-            });
+        const devicesRef = ref(db, 'devices');
+        onValue(devicesRef, (snapshot) => {
+            if (isSaving) {
+                devicesData = snapshot.val() || {}; 
+                return;
+            }
+            document.getElementById('loading-msg').style.display = 'none';
+            devicesData = snapshot.val() || {};
+            dirtyRows.clear();
+            updateSaveAllButtons();
+            renderTable();
         });
-        Object.keys(colMap).forEach(id => document.getElementById(id).addEventListener('change', (e) => toggleCol(colMap[id], e.target.checked)));
-        function toggleCol(cls, show) {
-            document.querySelectorAll('.'+cls).forEach(c => c.classList.toggle('hide-col', !show));
-        }
-        hkstToggle.addEventListener('change', renderTable);
 
-        // Render Logic
         function renderTable() {
             deviceListEl.innerHTML = '';
             const term = searchBar.value.toLowerCase();
-            const showHkstOnly = hkstToggle.checked;
             const keys = Object.keys(devicesData).sort((a,b) => (devicesData[a].name||'').localeCompare(devicesData[b].name||''));
+            
+            const showIncompatible = incompatibleToggle.checked;
+            const attVisible = document.getElementById('m-att').checked;
+            const vzwVisible = document.getElementById('m-vzw').checked;
 
             keys.forEach(key => {
                 const d = devicesData[key];
                 const nameLower = d.name.toLowerCase();
-                let isVisible = true;
-                if (term) {
-                    if (!nameLower.includes(term)) isVisible = false;
-                } else if (showHkstOnly) {
-                    if (!HKST_INVENTORY.some(h => nameLower.includes(h.toLowerCase()))) isVisible = false;
+                
+                if (term && !nameLower.includes(term)) return;
+
+                const isExcluded = TMO_EXCLUDED.some(regex => regex.test(d.name));
+                let tmoDisabledClass = '';
+                let lockDisabledClass = '';
+
+                if (isExcluded && !showIncompatible) {
+                    if (!attVisible && !vzwVisible) {
+                        return; 
+                    }
+                    tmoDisabledClass = 'input-disabled'; 
+                    lockDisabledClass = 'disabled'; 
                 }
-                if (!isVisible) return;
 
                 const getTs = (c) => c?.last_updated || d.last_updated;
                 const row = document.createElement('tr');
@@ -558,113 +687,281 @@
 
                 const tmoTot = parseFloat(d.tmo?.total) || 0;
                 const redVal = tmoTot ? calcTmo_Red(tmoTot) : '';
-                const val = (v) => (v===0 || v==="0" || !v) ? "" : v;
+                const val = (v) => (v === 0 || v === "0" || !v) ? "" : v;
+
+                const lockIcon = `<div class="btn-lock ${lockDisabledClass}" title="Toggle Lock"><i class="fas fa-lock-open"></i></div>`;
 
                 row.innerHTML = `
                     <td class="col-name">
                         <div class="name-display">${d.name}</div>
-                        <div class="name-input-wrapper"><input type="text" class="input-name" value="${d.name}"></div>
+                        <div class="name-input-wrapper">
+                            <input type="text" class="input-name" value="${d.name}">
+                        </div>
                         <div class="name-lock-wrapper"><i class="fas fa-lock"></i> &nbsp;Edit Title</div>
                     </td>
-                    <td class="c-att-mo"><input type="number" class="i-att-mo" value="${val(d.att?.monthly)}" step="0.01"><div class="row-meta ts-label">${formatTimestamp(getTs(d.att))}</div></td>
-                    <td class="c-att-tot"><input type="number" class="i-att-tot" value="${val(d.att?.total)}"><div class="row-meta"></div></td>
-                    <td class="c-vzw-mo"><input type="number" class="i-vzw-mo" value="${val(d.vzw?.monthly)}" step="0.01"><div class="row-meta ts-label">${formatTimestamp(getTs(d.vzw))}</div></td>
-                    <td class="c-vzw-tot"><input type="number" class="i-vzw-tot" value="${val(d.vzw?.total)}"><div class="row-meta"></div></td>
-                    <td class="c-tmo-red"><input type="number" class="i-tmo-red input-danger" value="${val(redVal)}" step="0.01"><div class="row-meta"></div></td>
-                    <td class="c-tmo-dp"><input type="number" class="i-tmo-dp" value="${val(d.tmo?.dp)}"><div class="row-meta"></div></td>
-                    <td class="c-tmo-mo"><input type="number" class="i-tmo-mo" value="${val(d.tmo?.monthly)}" step="0.01"><div class="row-meta ts-label">${formatTimestamp(getTs(d.tmo))}</div></td>
-                    <td class="c-tmo-tot"><input type="number" class="i-tmo-tot" value="${val(d.tmo?.total)}"><div class="row-meta"></div></td>
+                    
+                    <td class="c-att-mo group-att"><input type="number" class="i-att-mo" value="${val(d.att?.monthly)}" step="0.01"><div class="row-meta ts-label">${formatTimestamp(getTs(d.att))}</div></td>
+                    <td class="c-att-tot group-att"><input type="number" class="i-att-tot" value="${val(d.att?.total)}"><div class="row-meta"></div></td>
+                    
+                    <td class="c-vzw-mo group-vzw"><input type="number" class="i-vzw-mo" value="${val(d.vzw?.monthly)}" step="0.01"><div class="row-meta ts-label">${formatTimestamp(getTs(d.vzw))}</div></td>
+                    <td class="c-vzw-tot group-vzw"><input type="number" class="i-vzw-tot" value="${val(d.vzw?.total)}"><div class="row-meta"></div></td>
+                    
+                    <td class="c-tmo-red group-tmo">
+                        <div class="input-wrapper">
+                            <input type="number" class="i-tmo-red input-danger ${tmoDisabledClass}" value="${val(redVal)}" step="0.01">${lockIcon}
+                        </div>
+                        <div class="row-meta"></div>
+                    </td>
+                    <td class="c-tmo-dp group-tmo">
+                        <div class="input-wrapper">
+                            <input type="number" class="i-tmo-dp ${tmoDisabledClass}" value="${val(d.tmo?.dp)}">${lockIcon}
+                        </div>
+                        <div class="row-meta"></div>
+                    </td>
+                    <td class="c-tmo-mo group-tmo">
+                        <div class="input-wrapper">
+                            <input type="number" class="i-tmo-mo ${tmoDisabledClass}" value="${val(d.tmo?.monthly)}" step="0.01">${lockIcon}
+                        </div>
+                        <div class="row-meta ts-label">${formatTimestamp(getTs(d.tmo))}</div>
+                    </td>
+                    <td class="c-tmo-tot group-tmo">
+                        <div class="input-wrapper">
+                            <input type="number" class="i-tmo-tot ${tmoDisabledClass}" value="${val(d.tmo?.total)}">${lockIcon} <i class="fas fa-exclamation-triangle icon-warn" title="Math mismatch"></i>
+                        </div>
+                        <div class="row-meta"></div>
+                    </td>
+                    
                     <td class="col-actions">
                         <div class="row-actions">
-                            <button class="btn-icon btn-save-row" title="Save"><i class="fas fa-save"></i></button>
-                            <button class="btn-icon btn-verify-row" title="Verify"><i class="fas fa-check-circle"></i></button>
+                            <button class="btn-icon btn-save-row" title="Save & Verify"><i class="fas fa-save"></i></button>
                             <button class="btn-icon btn-del-row" title="Delete"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
                 `;
 
                 const activate = () => {
-                    document.querySelectorAll('tr.active').forEach(r => r!==row && r.classList.remove('active'));
+                    document.querySelectorAll('tr.active').forEach(r => r !== row && r.classList.remove('active'));
                     row.classList.add('active');
                 };
-                row.addEventListener('click', (e) => { if(e.target.tagName !== 'INPUT') activate(); });
+                row.addEventListener('click', (e) => { if(e.target.tagName !== 'INPUT' && !e.target.classList.contains('btn-lock') && !e.target.parentElement.classList.contains('btn-lock')) activate(); });
                 row.addEventListener('focusin', activate);
-                row.querySelector('.name-lock-wrapper').addEventListener('click', (e) => { e.stopPropagation(); row.querySelector('.col-name').classList.add('name-unlocked'); });
+
+                row.querySelector('.name-lock-wrapper').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    row.querySelector('.col-name').classList.add('name-unlocked');
+                });
 
                 attachRowListeners(row, key);
                 deviceListEl.appendChild(row);
             });
-            Object.keys(colMap).forEach(id => toggleCol(colMap[id], document.getElementById(id).checked));
+            
+            Object.keys(colMap).forEach(id => {
+                toggleCol(colMap[id], document.getElementById(id).checked);
+            });
         }
 
         function attachRowListeners(row, key) {
             const inputs = row.querySelectorAll('input');
             const saveBtn = row.querySelector('.btn-save-row');
-            const verifyBtn = row.querySelector('.btn-verify-row');
             const delBtn = row.querySelector('.btn-del-row');
+            const locks = row.querySelectorAll('.btn-lock');
 
-            inputs.forEach(inp => {
-                inp.addEventListener('input', (e) => {
-                    dirtyRows.add(key);
-                    updateSaveAllButtons();
-                    const t = e.target;
-                    
-                    if (t.classList.contains('i-att-tot')) row.querySelector('.i-att-mo').value = t.value ? calc36_Mo(t.value) : '';
-                    if (t.classList.contains('i-att-mo')) row.querySelector('.i-att-tot').value = t.value ? calc36_Tot(t.value) : '';
-                    
-                    if (t.classList.contains('i-vzw-tot')) row.querySelector('.i-vzw-mo').value = t.value ? calc36_Mo(t.value) : '';
-                    if (t.classList.contains('i-vzw-mo')) row.querySelector('.i-vzw-tot').value = t.value ? calc36_Tot(t.value) : '';
-
-                    const dpIn = row.querySelector('.i-tmo-dp');
-                    const moIn = row.querySelector('.i-tmo-mo');
-                    const totIn = row.querySelector('.i-tmo-tot');
-                    const redIn = row.querySelector('.i-tmo-red');
-                    const dp = parseFloat(dpIn.value)||0;
-
-                    if (t === redIn) { const tot = t.value ? calcTmo_TotFromRed(t.value) : ''; totIn.value = tot; moIn.value = tot ? calcTmo_Mo(tot, dp) : ''; }
-                    if (t === totIn) { const tot = parseFloat(t.value); moIn.value = t.value ? calcTmo_Mo(tot, dp) : ''; redIn.value = t.value ? calcTmo_Red(tot) : ''; }
-                    if (t === moIn) { const mo = parseFloat(t.value); const tot = t.value ? calcTmo_Tot(mo, dp) : ''; totIn.value = tot; redIn.value = tot ? calcTmo_Red(tot) : ''; }
-                    if (t === dpIn && totIn.value) moIn.value = calcTmo_Mo(parseFloat(totIn.value), dp);
+            locks.forEach(lock => {
+                lock.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (lock.classList.contains('disabled')) return;
+                    lock.classList.toggle('locked');
+                    const icon = lock.querySelector('i');
+                    if (lock.classList.contains('locked')) {
+                        icon.classList.remove('fa-lock-open');
+                        icon.classList.add('fa-lock');
+                    } else {
+                        icon.classList.remove('fa-lock');
+                        icon.classList.add('fa-lock-open');
+                    }
+                    validateRow(row);
                 });
             });
 
-            saveBtn.addEventListener('click', (e) => { e.stopPropagation(); saveRow(row, key); });
-            verifyBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const curr = { ...JSON.parse(row.dataset.original) };
-                const now = Date.now();
-                if(!curr.att) curr.att={}; if(!curr.vzw) curr.vzw={}; if(!curr.tmo) curr.tmo={};
-                curr.att.last_updated = now; curr.vzw.last_updated = now; curr.tmo.last_updated = now;
-                saveToGitHub(Object.assign(devicesData, { [key]: curr }));
+            inputs.forEach(inp => {
+                inp.addEventListener('input', (e) => {
+                    if (!dirtyRows.has(key)) log(`✏️ EDIT: Row '${key}' marked dirty.`);
+                    dirtyRows.add(key);
+                    updateSaveAllButtons();
+                    
+                    const t = e.target;
+                    
+                    // ATT/VZW
+                    if (t.classList.contains('i-att-tot')) row.querySelector('.i-att-mo').value = t.value ? calc36_Mo(t.value) : '';
+                    if (t.classList.contains('i-att-mo')) row.querySelector('.i-att-tot').value = t.value ? calc36_Tot(t.value) : '';
+                    if (t.classList.contains('i-vzw-tot')) row.querySelector('.i-vzw-mo').value = t.value ? calc36_Mo(t.value) : '';
+                    if (t.classList.contains('i-vzw-mo')) row.querySelector('.i-vzw-tot').value = t.value ? calc36_Tot(t.value) : '';
+                    
+                    // TMO Logic
+                    if (t.className.includes('i-tmo')) {
+                        solveTmoRow(row, t);
+                    }
+                    
+                    validateRow(row);
+                });
             });
+
+            saveBtn.addEventListener('click', (e) => { 
+                e.stopPropagation(); 
+                const data = scrapeRowData(row, key);
+                sendRowData(key, data).then(() => {
+                    dirtyRows.delete(key);
+                    updateSaveAllButtons();
+                });
+            });
+
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if(confirm('Delete?')) {
-                    delete devicesData[key];
-                    saveToGitHub(devicesData, "Deleted Device");
-                }
+                if (confirm('Delete?')) remove(ref(db, 'devices/'+key));
             });
+            
+            validateRow(row);
         }
 
-        async function saveRow(row, key) {
-            const orig = JSON.parse(row.dataset.original);
-            const now = Date.now();
+        function solveTmoRow(row, triggerInput) {
+            const redIn = row.querySelector('.i-tmo-red');
+            const dpIn = row.querySelector('.i-tmo-dp');
+            const moIn = row.querySelector('.i-tmo-mo');
+            const totIn = row.querySelector('.i-tmo-tot');
+
+            const isLocked = (el) => el.parentElement.querySelector('.btn-lock').classList.contains('locked');
+            const redL = isLocked(redIn);
+            const dpL = isLocked(dpIn);
+            const moL = isLocked(moIn);
+            const totL = isLocked(totIn);
+
+            const getV = (el) => parseFloat(el.value) || 0;
+
+            if (triggerInput === redIn) {
+                const val = parseFloat(redIn.value) || 0;
+                if (!totL) totIn.value = val ? calcTmo_TotFromRed(val) : '';
+                if (!dpL && !moL) { dpIn.value = ''; moIn.value = ''; }
+                else if (dpL && !moL) {
+                    const tot = getV(totIn); const dp = getV(dpIn);
+                    moIn.value = tot > 0 ? ((tot - dp) / 24).toFixed(2) : '';
+                }
+                else if (moL && !dpL) {
+                    const tot = getV(totIn); const mo = getV(moIn);
+                    dpIn.value = tot > 0 ? (tot - (mo * 24)).toFixed(2) : '';
+                }
+            }
+
+            if (triggerInput === totIn) {
+                const val = parseFloat(totIn.value) || 0;
+                if (!redL) redIn.value = val ? calcTmo_Red(val) : '';
+                if (!dpL && !moL) { dpIn.value = ''; moIn.value = ''; }
+                else if (dpL && !moL) {
+                    const dp = getV(dpIn);
+                    moIn.value = val > 0 ? ((val - dp) / 24).toFixed(2) : '';
+                }
+                else if (moL && !dpL) {
+                    const mo = getV(moIn);
+                    dpIn.value = val > 0 ? (val - (mo * 24)).toFixed(2) : '';
+                }
+            }
+
+            if (triggerInput === dpIn) {
+                const dp = parseFloat(dpIn.value) || 0;
+                const mo = getV(moIn);
+                const tot = getV(totIn);
+                
+                if (totL) { 
+                    if (!moL) moIn.value = tot > 0 ? ((tot - dp) / 24).toFixed(2) : '';
+                } else if (moL) { 
+                    const newTot = dp + (mo * 24);
+                    totIn.value = newTot;
+                    if (!redL) redIn.value = calcTmo_Red(newTot);
+                } else {
+                    if (mo > 0) { 
+                        const newTot = calcTmo_Tot(mo, dp);
+                        totIn.value = newTot;
+                        if (!redL) redIn.value = calcTmo_Red(newTot);
+                    } else if (tot > 0) { 
+                        const newMo = calcTmo_Mo(tot, dp);
+                        moIn.value = newMo > 0 ? newMo : '';
+                    }
+                }
+            }
+
+            if (triggerInput === moIn) {
+                const mo = parseFloat(moIn.value) || 0;
+                const dp = getV(dpIn);
+                const tot = getV(totIn);
+
+                if (totL) { 
+                    if (!dpL) dpIn.value = tot > 0 ? (tot - (mo * 24)).toFixed(2) : '';
+                } else if (dpL) { 
+                    const newTot = dp + (mo * 24);
+                    totIn.value = newTot;
+                    if (!redL) redIn.value = calcTmo_Red(newTot);
+                } else {
+                    if (dp > 0) { 
+                        const newTot = calcTmo_Tot(mo, dp);
+                        totIn.value = newTot;
+                        if (!redL) redIn.value = calcTmo_Red(newTot);
+                    } else if (tot > 0) { 
+                        const newDp = tot - (mo * 24);
+                        dpIn.value = newDp > 0 ? Math.round(newDp * 100) / 100 : '';
+                    }
+                }
+            }
+        }
+
+        function validateRow(row) {
+            const getV = (sel) => parseFloat(row.querySelector(sel).value) || 0;
+            const red = getV('.i-tmo-red');
+            const dp = getV('.i-tmo-dp');
+            const mo = getV('.i-tmo-mo');
+            const tot = getV('.i-tmo-tot');
+            const warnIcon = row.querySelector('.icon-warn');
+
+            if (tot === 0) { warnIcon.classList.remove('visible'); return; }
+
+            const redCheck = Math.abs(tot - (red * 24)) > 0.24; 
+            let partsCheck = false;
+            if (dp > 0 || mo > 0) {
+                 partsCheck = Math.abs(tot - (dp + (mo * 24))) > 0.24;
+            }
+
+            if (redCheck || partsCheck) {
+                warnIcon.classList.add('visible');
+            } else {
+                warnIcon.classList.remove('visible');
+            }
+        }
+
+        function scrapeRowData(row, key) {
             const getVal = (sel) => parseFloat(row.querySelector(sel).value) || 0;
-            const curr = {
-                name: row.querySelector('.input-name').value,
-                att: { monthly: getVal('.i-att-mo'), total: getVal('.i-att-tot'), last_updated: orig.att?.last_updated||orig.last_updated },
-                vzw: { monthly: getVal('.i-vzw-mo'), total: getVal('.i-vzw-tot'), last_updated: orig.vzw?.last_updated||orig.last_updated },
-                tmo: { dp: getVal('.i-tmo-dp'), monthly: getVal('.i-tmo-mo'), total: getVal('.i-tmo-tot'), last_updated: orig.tmo?.last_updated||orig.last_updated }
+            const getName = () => row.querySelector('.input-name').value;
+            const now = Date.now();
+
+            return {
+                name: getName(),
+                att: { 
+                    monthly: getVal('.i-att-mo'), total: getVal('.i-att-tot'),
+                    last_updated: now 
+                },
+                vzw: { 
+                    monthly: getVal('.i-vzw-mo'), total: getVal('.i-vzw-tot'),
+                    last_updated: now 
+                },
+                tmo: { 
+                    dp: getVal('.i-tmo-dp'), monthly: getVal('.i-tmo-mo'), total: getVal('.i-tmo-tot'),
+                    last_updated: now 
+                }
             };
+        }
 
-            if (curr.att.total !== (orig.att?.total||0)) curr.att.last_updated = now;
-            if (curr.vzw.total !== (orig.vzw?.total||0)) curr.vzw.last_updated = now;
-            if (curr.tmo.total !== (orig.tmo?.total||0) || curr.tmo.dp !== (orig.tmo?.dp||0)) curr.tmo.last_updated = now;
-
-            devicesData[key] = curr;
-            await saveToGitHub(devicesData);
-            dirtyRows.delete(key);
-            updateSaveAllButtons();
+        function sendRowData(key, data) {
+            log(`⬆️ SENDING: Update for ${data.name} (${key})...`);
+            return update(ref(db, 'devices/'+key), data)
+                .then(() => log(`✅ SAVED: ${data.name}`))
+                .catch(err => log(`❌ ERROR: ${data.name} - ${err.message}`));
         }
 
         function updateSaveAllButtons() {
@@ -675,28 +972,30 @@
             btnSaveBottom.textContent = `Save ${dirtyRows.size} Changes`;
         }
 
-        const handleBulkSave = async () => {
-            const now = Date.now();
+        const handleBulkSave = () => {
+            log(`💾 BULK SAVE: Processing ${dirtyRows.size} rows.`);
+            isSaving = true; 
+            const updates = [];
             dirtyRows.forEach(key => {
                 const row = document.querySelector(`tr[data-key="${key}"]`);
                 if (row) {
-                    const orig = JSON.parse(row.dataset.original);
-                    const getVal = (sel) => parseFloat(row.querySelector(sel).value) || 0;
-                    const curr = {
-                        name: row.querySelector('.input-name').value,
-                        att: { monthly: getVal('.i-att-mo'), total: getVal('.i-att-tot'), last_updated: orig.att?.last_updated||orig.last_updated },
-                        vzw: { monthly: getVal('.i-vzw-mo'), total: getVal('.i-vzw-tot'), last_updated: orig.vzw?.last_updated||orig.last_updated },
-                        tmo: { dp: getVal('.i-tmo-dp'), monthly: getVal('.i-tmo-mo'), total: getVal('.i-tmo-tot'), last_updated: orig.tmo?.last_updated||orig.last_updated }
-                    };
-                    if (curr.att.total !== (orig.att?.total||0)) curr.att.last_updated = now;
-                    if (curr.vzw.total !== (orig.vzw?.total||0)) curr.vzw.last_updated = now;
-                    if (curr.tmo.total !== (orig.tmo?.total||0) || curr.tmo.dp !== (orig.tmo?.dp||0)) curr.tmo.last_updated = now;
-                    devicesData[key] = curr;
+                    const data = scrapeRowData(row, key);
+                    updates.push({ key, data });
                 }
             });
-            await saveToGitHub(devicesData, "Bulk Update");
-            dirtyRows.clear();
-            updateSaveAllButtons();
+            const promises = updates.map(item => sendRowData(item.key, item.data));
+            Promise.all(promises).then(() => {
+                log('✅ FIREBASE SYNC COMPLETE.');
+                
+                // v18: GitHub Publish
+                const allData = devicesData; // Use latest local state
+                publishToGitHub(allData);
+
+                dirtyRows.clear();
+                isSaving = false; 
+                updateSaveAllButtons();
+                renderTable(); 
+            });
         };
 
         btnSaveTop.addEventListener('click', handleBulkSave);
@@ -712,35 +1011,68 @@
              if (t.id === 'new-att-mo') document.getElementById('new-att-total').value = calc36_Tot(t.value);
              if (t.id === 'new-vzw-total') document.getElementById('new-vzw-mo').value = calc36_Mo(t.value);
              if (t.id === 'new-vzw-mo') document.getElementById('new-vzw-total').value = calc36_Tot(t.value);
-             const dp = parseFloat(document.getElementById('new-tmo-dp').value)||0;
-             const red = document.getElementById('new-tmo-red');
-             const tot = document.getElementById('new-tmo-total');
-             const mo = document.getElementById('new-tmo-mo');
+             
+             // TMO Add Logic (Simplified v14 Logic)
+             const dpIn = document.getElementById('new-tmo-dp');
+             const redIn = document.getElementById('new-tmo-red');
+             const totIn = document.getElementById('new-tmo-total');
+             const moIn = document.getElementById('new-tmo-mo');
+             
+             const getV = (el) => parseFloat(el.value) || 0;
 
-             if (t === red) { const totalVal = t.value ? calcTmo_TotFromRed(t.value) : ''; tot.value = totalVal; mo.value = totalVal ? calcTmo_Mo(totalVal, dp) : ''; }
-             if (t === tot) { mo.value = t.value ? calcTmo_Mo(t.value, dp) : ''; red.value = t.value ? calcTmo_Red(t.value) : ''; }
-             if (t === mo) { const totalVal = t.value ? calcTmo_Tot(t.value, dp) : ''; tot.value = totalVal; red.value = totalVal ? calcTmo_Red(totalVal) : ''; }
+             if (t === redIn) {
+                 const totalVal = t.value ? calcTmo_TotFromRed(t.value) : '';
+                 totIn.value = totalVal;
+                 dpIn.value = ''; moIn.value = '';
+             }
+             if (t === totIn) {
+                 const tot = parseFloat(t.value);
+                 redIn.value = t.value ? calcTmo_Red(tot) : '';
+                 dpIn.value = ''; moIn.value = '';
+             }
+             if (t === moIn) {
+                 const mo = parseFloat(t.value);
+                 const tot = getV(totIn);
+                 if (tot > 0) {
+                     if (mo > 0) {
+                         const newDp = (tot - (mo * 24));
+                         dpIn.value = newDp !== '' ? Math.round(newDp * 100) / 100 : '';
+                     } else { dpIn.value = ''; }
+                 }
+             }
+             if (t === dpIn) {
+                 const dp = parseFloat(t.value);
+                 const tot = getV(totIn);
+                 if (tot > 0) {
+                     if (dp > 0) {
+                         const newMo = calcTmo_Mo(tot, dp);
+                         moIn.value = newMo;
+                     } else { moIn.value = ''; }
+                 }
+             }
         });
 
-        document.getElementById('btn-add-device').addEventListener('click', async () => {
+        document.getElementById('btn-add-device').addEventListener('click', () => {
             const name = document.getElementById('new-name').value;
             if (!name) return alert("Required");
             const key = name.toLowerCase().replace(/[^a-z0-9]/g, '');
             const now = Date.now();
-            const newDevice = {
+            
+            log(`⬆️ ADDING: New Device ${name}...`);
+            set(ref(db, 'devices/'+key), {
                 name: name,
                 att: { monthly: parseFloat(document.getElementById('new-att-mo').value)||0, total: parseFloat(document.getElementById('new-att-total').value)||0, last_updated: now },
                 vzw: { monthly: parseFloat(document.getElementById('new-vzw-mo').value)||0, total: parseFloat(document.getElementById('new-vzw-total').value)||0, last_updated: now },
                 tmo: { dp: parseFloat(document.getElementById('new-tmo-dp').value)||0, monthly: parseFloat(document.getElementById('new-tmo-mo').value)||0, total: parseFloat(document.getElementById('new-tmo-total').value)||0, last_updated: now },
                 last_updated: now
-            };
-            devicesData[key] = newDevice;
-            await saveToGitHub(devicesData, "Added New Device");
-            addInputs.forEach(i => i.value = '');
-            renderTable(); // <--- FIX: Update UI immediately
+            }).then(() => {
+                log('✅ ADDED: New device created.');
+                addInputs.forEach(i => i.value = '');
+            });
         });
 
         searchBar.addEventListener('input', renderTable);
+
     </script>
 </body>
 </html>
