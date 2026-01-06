@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Installment Manager (Beta v18)</title>
+    <title>Installment Manager (Beta v20.1)</title>
     
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -26,7 +26,6 @@
             position: relative;
         }
 
-        /* v18: Settings Button */
         #btn-settings {
             position: absolute;
             right: 0;
@@ -280,7 +279,7 @@
             margin-top: 5px; font-size: 12px;
         }
 
-        /* v18: Settings Modal */
+        /* Settings Modal */
         #settings-modal {
             display: none;
             position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
@@ -304,7 +303,7 @@
 <body>
 
     <h1>
-        Installment Manager (Beta v18)
+        Installment Manager (Beta v20.1)
         <button id="btn-settings" title="Cloud Settings"><i class="fas fa-cog"></i></button>
     </h1>
 
@@ -406,7 +405,7 @@
             <button class="btn-save-all" id="btn-save-bottom">Save All Changes</button>
         </div>
 
-        <!-- Developer Console -->
+        <!-- Developer Console (Restored v20.1) -->
         <div id="dev-console-wrapper">
             <label><input type="checkbox" id="dev-console-toggle"> Show Developer Console</label>
             <div id="dev-console-container">
@@ -446,11 +445,12 @@
     <!-- Firebase Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, remove, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         // --- LOGGER ---
         function log(msg) {
             const out = document.getElementById('dev-console-output');
+            if (!out) return; // Safety check
             const now = new Date();
             const ts = now.toISOString().split('T')[1].slice(0,-1); 
             out.textContent += `[${ts}] ${msg}\n`;
@@ -474,8 +474,10 @@
         // --- STATE ---
         let devicesData = {};
         let dirtyRows = new Set(); 
+        let dirtyCarriers = {}; // Granular Dirty Tracking
         let isSaving = false;
 
+        // v17: Compatibility List
         const TMO_EXCLUDED = [
             /Galaxy S\d+/i,
             /One Ace 5G/i,
@@ -490,31 +492,37 @@
         const btnSaveBottom = document.getElementById('btn-save-bottom');
         const incompatibleToggle = document.getElementById('cb-incompatible');
         
-        // --- v18 SETTINGS LOGIC ---
+        // --- SETTINGS LOGIC ---
         const btnSettings = document.getElementById('btn-settings');
         const settingsModal = document.getElementById('settings-modal');
         const btnCloseSettings = document.getElementById('btn-close-settings');
         const btnSaveGh = document.getElementById('btn-save-gh');
 
-        btnSettings.addEventListener('click', () => {
-            const config = JSON.parse(localStorage.getItem('gh_config') || '{}');
-            document.getElementById('gh-user').value = config.user || 'spamfan';
-            document.getElementById('gh-repo').value = config.repo || 'optimizerunstable';
-            document.getElementById('gh-token').value = config.token || '';
-            settingsModal.style.display = 'flex';
-        });
+        if (btnSettings) {
+            btnSettings.addEventListener('click', () => {
+                const config = JSON.parse(localStorage.getItem('gh_config') || '{}');
+                document.getElementById('gh-user').value = config.user || 'spamfan';
+                document.getElementById('gh-repo').value = config.repo || 'optimizerunstable'; 
+                document.getElementById('gh-token').value = config.token || '';
+                settingsModal.style.display = 'flex';
+            });
+        }
 
-        btnCloseSettings.addEventListener('click', () => settingsModal.style.display = 'none');
+        if (btnCloseSettings) {
+            btnCloseSettings.addEventListener('click', () => settingsModal.style.display = 'none');
+        }
 
-        btnSaveGh.addEventListener('click', () => {
-            const user = document.getElementById('gh-user').value.trim();
-            const repo = document.getElementById('gh-repo').value.trim();
-            const token = document.getElementById('gh-token').value.trim();
-            if (!user || !repo || !token) return alert("All fields required");
-            localStorage.setItem('gh_config', JSON.stringify({ user, repo, token }));
-            settingsModal.style.display = 'none';
-            log("✅ GitHub credentials saved locally.");
-        });
+        if (btnSaveGh) {
+            btnSaveGh.addEventListener('click', () => {
+                const user = document.getElementById('gh-user').value.trim();
+                const repo = document.getElementById('gh-repo').value.trim();
+                const token = document.getElementById('gh-token').value.trim();
+                if (!user || !repo || !token) return alert("All fields required");
+                localStorage.setItem('gh_config', JSON.stringify({ user, repo, token }));
+                settingsModal.style.display = 'none';
+                log("✅ GitHub credentials saved locally.");
+            });
+        }
 
         // --- GITHUB PUBLISHER ---
         async function publishToGitHub(data) {
@@ -525,7 +533,7 @@
             }
 
             const url = `https://api.github.com/repos/${config.user}/${config.repo}/contents/edlp_data.json`;
-            const content = btoa(JSON.stringify({ devices: data }, null, 2)); // Base64 encode
+            const content = btoa(JSON.stringify({ devices: data }, null, 2)); 
             
             try {
                 // 1. Get SHA
@@ -563,20 +571,27 @@
         // --- CONSOLE ---
         const devToggle = document.getElementById('dev-console-toggle');
         const devContainer = document.getElementById('dev-console-container');
-        devToggle.addEventListener('change', (e) => {
-            devContainer.style.display = e.target.checked ? 'block' : 'none';
-        });
+        
+        if (devToggle) {
+            devToggle.addEventListener('change', (e) => {
+                if (devContainer) devContainer.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
 
-        document.getElementById('btn-copy-log').addEventListener('click', () => {
-            const text = document.getElementById('dev-console-output').textContent;
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text)
-                    .then(() => alert("Log copied!"))
-                    .catch(() => legacyCopy(text));
-            } else {
-                legacyCopy(text);
-            }
-        });
+        const copyBtn = document.getElementById('btn-copy-log');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                const text = document.getElementById('dev-console-output').textContent;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text)
+                        .then(() => alert("Log copied!"))
+                        .catch(() => legacyCopy(text));
+                } else {
+                    legacyCopy(text);
+                }
+            });
+        }
+
         function legacyCopy(text) {
             const ta = document.createElement('textarea'); ta.value = text;
             ta.style.position = 'fixed'; ta.style.opacity = 0; document.body.appendChild(ta);
@@ -591,18 +606,22 @@
         };
 
         ['att', 'vzw', 'tmo'].forEach(carrier => {
-            document.getElementById(`m-${carrier}`).addEventListener('change', (e) => {
-                const isChecked = e.target.checked;
-                document.querySelectorAll(`input[data-group="${carrier}"]`).forEach(cb => {
-                    cb.checked = isChecked;
-                    toggleCol(colMap[cb.id], isChecked);
+            const master = document.getElementById(`m-${carrier}`);
+            if (master) {
+                master.addEventListener('change', (e) => {
+                    const isChecked = e.target.checked;
+                    document.querySelectorAll(`input[data-group="${carrier}"]`).forEach(cb => {
+                        cb.checked = isChecked;
+                        toggleCol(colMap[cb.id], isChecked);
+                    });
+                    renderTable(); 
                 });
-                renderTable(); 
-            });
+            }
         });
 
         Object.keys(colMap).forEach(id => {
-            document.getElementById(id).addEventListener('change', (e) => toggleCol(colMap[id], e.target.checked));
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('change', (e) => toggleCol(colMap[id], e.target.checked));
         });
 
         function toggleCol(className, isVisible) {
@@ -610,7 +629,7 @@
             cells.forEach(c => c.classList.toggle('hide-col', !isVisible));
         }
 
-        incompatibleToggle.addEventListener('change', renderTable);
+        if (incompatibleToggle) incompatibleToggle.addEventListener('change', renderTable);
 
         // --- MATH ---
         const roundMo = (n) => Math.round((parseFloat(n)||0)*100)/100;
@@ -648,6 +667,7 @@
             document.getElementById('loading-msg').style.display = 'none';
             devicesData = snapshot.val() || {};
             dirtyRows.clear();
+            dirtyCarriers = {}; 
             updateSaveAllButtons();
             renderTable();
         });
@@ -657,9 +677,9 @@
             const term = searchBar.value.toLowerCase();
             const keys = Object.keys(devicesData).sort((a,b) => (devicesData[a].name||'').localeCompare(devicesData[b].name||''));
             
-            const showIncompatible = incompatibleToggle.checked;
-            const attVisible = document.getElementById('m-att').checked;
-            const vzwVisible = document.getElementById('m-vzw').checked;
+            const showIncompatible = incompatibleToggle ? incompatibleToggle.checked : false;
+            const attVisible = document.getElementById('m-att') ? document.getElementById('m-att').checked : true;
+            const vzwVisible = document.getElementById('m-vzw') ? document.getElementById('m-vzw').checked : true;
 
             keys.forEach(key => {
                 const d = devicesData[key];
@@ -756,8 +776,15 @@
             });
             
             Object.keys(colMap).forEach(id => {
-                toggleCol(colMap[id], document.getElementById(id).checked);
+                const cb = document.getElementById(id);
+                if(cb) toggleCol(colMap[id], cb.checked);
             });
+        }
+
+        // v19 Helper: Mark carrier dirty
+        function markCarrierDirty(key, carrier) {
+            if (!dirtyCarriers[key]) dirtyCarriers[key] = { att: false, vzw: false, tmo: false };
+            dirtyCarriers[key][carrier] = true;
         }
 
         function attachRowListeners(row, key) {
@@ -771,6 +798,8 @@
                     e.stopPropagation();
                     if (lock.classList.contains('disabled')) return;
                     lock.classList.toggle('locked');
+                    
+                    // v20 Fix: Swap Icon Class
                     const icon = lock.querySelector('i');
                     if (lock.classList.contains('locked')) {
                         icon.classList.remove('fa-lock-open');
@@ -779,25 +808,41 @@
                         icon.classList.remove('fa-lock');
                         icon.classList.add('fa-lock-open');
                     }
+
                     validateRow(row);
+                    markCarrierDirty(key, 'tmo');
+                    dirtyRows.add(key);
+                    updateSaveAllButtons();
                 });
             });
 
             inputs.forEach(inp => {
+                inp.addEventListener('focus', (e) => {
+                    if (inp.closest('.group-att')) markCarrierDirty(key, 'att');
+                    if (inp.closest('.group-vzw')) markCarrierDirty(key, 'vzw');
+                    if (inp.closest('.group-tmo')) markCarrierDirty(key, 'tmo');
+                });
+
                 inp.addEventListener('input', (e) => {
                     if (!dirtyRows.has(key)) log(`✏️ EDIT: Row '${key}' marked dirty.`);
                     dirtyRows.add(key);
-                    updateSaveAllButtons();
                     
                     const t = e.target;
+                    if (t.closest('.group-att')) markCarrierDirty(key, 'att');
+                    if (t.closest('.group-vzw')) markCarrierDirty(key, 'vzw');
+                    if (t.closest('.group-tmo')) markCarrierDirty(key, 'tmo');
+
+                    updateSaveAllButtons();
                     
-                    // ATT/VZW
+                    const getV = (el) => parseFloat(el.value) || 0;
+
+                    // Standard ATT/VZW logic
                     if (t.classList.contains('i-att-tot')) row.querySelector('.i-att-mo').value = t.value ? calc36_Mo(t.value) : '';
                     if (t.classList.contains('i-att-mo')) row.querySelector('.i-att-tot').value = t.value ? calc36_Tot(t.value) : '';
                     if (t.classList.contains('i-vzw-tot')) row.querySelector('.i-vzw-mo').value = t.value ? calc36_Mo(t.value) : '';
                     if (t.classList.contains('i-vzw-mo')) row.querySelector('.i-vzw-tot').value = t.value ? calc36_Tot(t.value) : '';
                     
-                    // TMO Logic
+                    // TMO Solver Logic (v16)
                     if (t.className.includes('i-tmo')) {
                         solveTmoRow(row, t);
                     }
@@ -811,7 +856,12 @@
                 const data = scrapeRowData(row, key);
                 sendRowData(key, data).then(() => {
                     dirtyRows.delete(key);
+                    if (dirtyCarriers[key]) delete dirtyCarriers[key]; 
                     updateSaveAllButtons();
+                    get(ref(db, 'devices')).then(snap => {
+                        const allData = snap.val() || {};
+                        publishToGitHub(allData);
+                    });
                 });
             });
 
@@ -922,10 +972,10 @@
 
             if (tot === 0) { warnIcon.classList.remove('visible'); return; }
 
-            const redCheck = Math.abs(tot - (red * 24)) > 0.24; 
+            const redCheck = Math.abs(tot - (red * 24)) > 0.24; // v17 Tolerance
             let partsCheck = false;
             if (dp > 0 || mo > 0) {
-                 partsCheck = Math.abs(tot - (dp + (mo * 24))) > 0.24;
+                 partsCheck = Math.abs(tot - (dp + (mo * 24))) > 0.24; // v17 Tolerance
             }
 
             if (redCheck || partsCheck) {
@@ -936,23 +986,26 @@
         }
 
         function scrapeRowData(row, key) {
+            const orig = JSON.parse(row.dataset.original);
             const getVal = (sel) => parseFloat(row.querySelector(sel).value) || 0;
             const getName = () => row.querySelector('.input-name').value;
             const now = Date.now();
+            
+            const flags = dirtyCarriers[key] || { att: false, vzw: false, tmo: false };
 
             return {
                 name: getName(),
                 att: { 
                     monthly: getVal('.i-att-mo'), total: getVal('.i-att-tot'),
-                    last_updated: now 
+                    last_updated: flags.att ? now : (orig.att?.last_updated || now)
                 },
                 vzw: { 
                     monthly: getVal('.i-vzw-mo'), total: getVal('.i-vzw-tot'),
-                    last_updated: now 
+                    last_updated: flags.vzw ? now : (orig.vzw?.last_updated || now)
                 },
                 tmo: { 
                     dp: getVal('.i-tmo-dp'), monthly: getVal('.i-tmo-mo'), total: getVal('.i-tmo-tot'),
-                    last_updated: now 
+                    last_updated: flags.tmo ? now : (orig.tmo?.last_updated || now)
                 }
             };
         }
@@ -987,19 +1040,19 @@
             Promise.all(promises).then(() => {
                 log('✅ FIREBASE SYNC COMPLETE.');
                 
-                // v18: GitHub Publish
-                const allData = devicesData; // Use latest local state
+                const allData = devicesData; 
                 publishToGitHub(allData);
 
                 dirtyRows.clear();
+                dirtyCarriers = {}; 
                 isSaving = false; 
                 updateSaveAllButtons();
                 renderTable(); 
             });
         };
 
-        btnSaveTop.addEventListener('click', handleBulkSave);
-        btnSaveBottom.addEventListener('click', handleBulkSave);
+        if (btnSaveTop) btnSaveTop.addEventListener('click', handleBulkSave);
+        if (btnSaveBottom) btnSaveBottom.addEventListener('click', handleBulkSave);
 
         // Add New Logic
         const addRow = document.getElementById('add-row');
@@ -1012,7 +1065,7 @@
              if (t.id === 'new-vzw-total') document.getElementById('new-vzw-mo').value = calc36_Mo(t.value);
              if (t.id === 'new-vzw-mo') document.getElementById('new-vzw-total').value = calc36_Tot(t.value);
              
-             // TMO Add Logic (Simplified v14 Logic)
+             // TMO Add Logic (Simplified v14 Logic for Add Row)
              const dpIn = document.getElementById('new-tmo-dp');
              const redIn = document.getElementById('new-tmo-red');
              const totIn = document.getElementById('new-tmo-total');
